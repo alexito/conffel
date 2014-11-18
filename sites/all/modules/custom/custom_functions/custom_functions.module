@@ -1,0 +1,15 @@
+<?php
+
+function calc_total_por_tallas($data, $row){
+  $resp = array();
+  $resp[0] = 0;
+  $node = node_load($data->nid);
+  $items = field_get_items('node', $node, 'field_color_y_capa');
+  
+  foreach ($items as $item) {
+    $fc = field_collection_field_get_entity($item);
+    $resp[0] = $resp[0] + $fc->field_capas[LANGUAGE_NONE][0]['value'];
+  }
+  $resp[1] = count($items) * $resp[0];
+  return $resp;
+}
