@@ -1,15 +1,102 @@
 <?php
 
-function calc_total_por_tallas($data, $row){
-  $resp = array();
-  $resp[0] = 0;
-  $node = node_load($data->nid);
-  $items = field_get_items('node', $node, 'field_color_y_capa');
+/**
+ * Implements hook_menu()
+ */
+function custom_functions_menu() {
+ $items['tarjeta_form/%node'] = array(
+  'title' => 'Tarjeta de producción', //The name of the menu that will be displayed
+  'page callback' => 'drupal_get_form', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
+  'page arguments' => array('tarjeta_form', 1), //put the name of the form here
+  'access callback' => TRUE,
+  'access arguments' => array(1)
+  //'page arguments' => array(1),
+ );
+ return $items;
+}
+ 
+function tarjeta_page_callback($arg) {
+ //The argument is the name of the function with the form details
+ return drupal_get_form('tarjeta_form');
+}
+ 
+function tarjeta_form($form, &$form_state, $argument) {
+  $a = $argument;
+ $form = array (
+  //The action attribute of the HTML form tag
+  '#action' => '#', 
+  //We define a simple text field for the "name"
+  'name' => array ( 
+   '#type' => 'textfield',
+   //The label that will be placed with the field
+   '#title' => t('My pretty name'),
+   //The description will be placed right below the field
+   '#description' => t('My descrition'),
+   //If true the system will perform a simple check on submit so that it is never empty
+   '#required' => TRUE,
+   '#default_value' => $argument->title,
+  ),
+  //We define a simple submit button
+  'submit' => array ( 
+   '#type' => 'submit',
+   '#value' => t('My submit'),
+  ),
+ );
   
-  foreach ($items as $item) {
+ return $form;
+}
+
+function tarjeta_form_validate($form, &$form_state){
+ // My validation parameters
+ if(strlen($form_state['values']['name']) > 10) {
+  form_set_error('', t('Hey, your name is too long!'));
+ }
+}
+ 
+function tarjeta_form_submit($form, &$form_state) {
+ //My success processing
+ drupal_set_message(t('Yay, your name is fine!'));
+}
+
+function get_calculated_values($data, $row){
+  $resp = new stdClass();
+  $resp->suma_color_capa = 0;
+  $resp->suma_total = 0;
+  $node = node_load($data->nid);
+  $items_cc = field_get_items('node', $node, 'field_color_y_capa');
+  
+  $i = 0;
+  $resp->cc = array();
+  $resp->html_cc = '<table><thead><tr><td>Color</td><td>Capas</td></tr><thead><tbody>';
+  foreach ($items_cc as $item) {
     $fc = field_collection_field_get_entity($item);
-    $resp[0] = $resp[0] + $fc->field_capas[LANGUAGE_NONE][0]['value'];
+    $term = taxonomy_term_load($fc->field_color[LANGUAGE_NONE][0]['tid']);
+    $resp->cc[$i] = new stdClass();
+    $resp->cc[$i]->color = $term->name;
+    $resp->cc[$i]->capa = $fc->field_capas[LANGUAGE_NONE][0]['value'];
+    $resp->html_cc .= '<tr><td>' . $resp->cc[$i]->color .'</td><td>' . $resp->cc[$i]->capa . '</td></tr>';
+    $resp->suma_color_capa = $resp->suma_color_capa + $fc->field_capas[LANGUAGE_NONE][0]['value'];
   }
-  $resp[1] = count($items) * $resp[0];
+  $resp->html_cc .= '</tbody><tfoot><tr><td>Total: </td><td>' . $resp->suma_color_capa . '</td></tr></tfoot></table>';
+  
+  
+  
+  $items_tt = field_get_items('node', $node, 'field_talla_y_tanto');
+  $i = 0;
+  $resp->tt = array();
+  $resp->html_tt = '<table><thead><tr><td>Talla</td><td>Tanto</td><td>Subtotal</td></tr><thead><tbody>';
+  foreach ($items_tt as $item) {    
+    $fc = field_collection_field_get_entity($item);
+    $term = taxonomy_term_load($fc->field_talla[LANGUAGE_NONE][0]['tid']);
+    $resp->tt[$i] = new stdClass();
+    $resp->tt[$i]->talla = $term->name;
+    $resp->tt[$i]->tanto = $fc->field_tanto[LANGUAGE_NONE][0]['value'];
+    $resp->html_tt .= '<tr><td>' . $resp->tt[$i]->talla .'</td><td>' . $resp->tt[$i]->tanto . '</td><td>' . ($resp->tt[$i]->tanto * $resp->suma_color_capa) . '</td></tr>';
+    $resp->suma_total = $resp->suma_total + ($resp->tt[$i]->tanto * $resp->suma_color_capa);
+    $i++;
+  }
+  $resp->html_tt .= '</tbody><tfoot><tr><td></td><td>Total: </td><td>' . $resp->suma_total . '</td></tr></tfoot></table>';
+  
   return $resp;
 }
+
