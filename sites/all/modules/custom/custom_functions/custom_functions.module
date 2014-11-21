@@ -4,78 +4,119 @@
  * Implements hook_menu()
  */
 function custom_functions_menu() {
- $items['tarjeta_form/%node'] = array(
+ $items['tarjeta-produccion'] = array(
   'title' => 'Tarjeta de producción', //The name of the menu that will be displayed
-  'page callback' => 'drupal_get_form', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
-  'page arguments' => array('tarjeta_form', 1), //put the name of the form here
-  'access callback' => TRUE,
-  'access arguments' => array(1)
-  //'page arguments' => array(1),
+//  'page callback' => 'tarjeta_page_callback', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
+//  'page arguments' => array(1), //put the name of the form here
+  //'access callback' => TRUE,
+  'access arguments' => array('access content')
  );
  return $items;
 }
  
-function tarjeta_page_callback($arg) {
- //The argument is the name of the function with the form details
- return drupal_get_form('tarjeta_form');
+
+function custom_functions_block_info() {
+  $blocks = array();
+  $blocks['tarjeta_produccion'] = array(
+    'info' => t('Tarjeta de produccion'),
+  );
+  $blocks['bloque_corte'] = array(
+    'info' => t('Bloque de corte'),
+  );
+  return $blocks;
 }
- 
-function tarjeta_form($form, &$form_state, $argument) {
-  $a = $argument;
- $form = array (
-  //The action attribute of the HTML form tag
-  '#action' => '#', 
-  //We define a simple text field for the "name"
-  'name' => array ( 
-   '#type' => 'textfield',
-   //The label that will be placed with the field
-   '#title' => t('My pretty name'),
-   //The description will be placed right below the field
-   '#description' => t('My descrition'),
-   //If true the system will perform a simple check on submit so that it is never empty
-   '#required' => TRUE,
-   '#default_value' => $argument->title,
-  ),
-  //We define a simple submit button
-  'submit' => array ( 
-   '#type' => 'submit',
-   '#value' => t('My submit'),
-  ),
- );
+
+function custom_functions_block_configure($delta='') {
+    $block = array();
+    
+    switch($delta) {
+            case 'tarjeta_produccion':
+                    $block['subject'] = t('Tarjeta de producción');
+                    $block['content'] = drupal_get_form('tarjeta_de_produccion_node_form');
+            break;
+          case 'bloque_corte':
+                    $block['subject'] = t('Bloque de corte');
+            $view = views_get_view('lista_de_cortes');
+            $view->set_display('block_1');
+            $view->set_arguments($_GET['nid']);
+            // change the amount of items to show
+            //$view->set_items_per_page(4);
+            $view->pre_execute();
+            $view->execute();
+            $block['content'] = $view->render();
+            break;
+    }
+     return $block;
+}
+
+function custom_functions_block_view($delta = '') {
+  // This example is adapted from node.module.
+  $block = array();
+
+  switch ($delta) {
+    case 'tarjeta_produccion':
+      module_load_include('inc', 'node', 'node.pages'); 
+      $node_form = new stdClass;
+      $node_form->type = 'tarjeta_de_produccion';
+      $node_form->language = LANGUAGE_NONE;
+      $block['subject'] = t('Tarjeta de producción');
+      $block['content'] = drupal_get_form('tarjeta_de_produccion_node_form', $node_form);
+    break;
+  }
+  return $block;
+}
+
+
+
+function get_form_tarjeta_de_produccion() {
+  module_load_include('inc', 'node', 'node.pages'); 
+  $node_form = new stdClass;
+  $node_form->type = 'tarjeta_de_produccion';
+  $node_form->language = LANGUAGE_NONE;
+  $form = drupal_get_form('tarjeta_de_produccion_node_form', $node_form);
+ return drupal_render($form);
+}
+
+function custom_functions_form_alter(&$form, &$form_state, $form_id) {
+  if($form_id == "tarjeta_de_produccion_node_form"){
+//    if(!isset($_GET['nid']))
+//      return;
+//    $info = get_calculated_values(null, null, $_GET['nid']);
+    $b = 0;
+    $form['phone'] = array(
+      '#title'    => t('Phone'),
+      '#type'     => 'textfield',
+      '#required' => TRUE,
+    );
+  }
+  $a = 0;
   
- return $form;
 }
 
-function tarjeta_form_validate($form, &$form_state){
- // My validation parameters
- if(strlen($form_state['values']['name']) > 10) {
-  form_set_error('', t('Hey, your name is too long!'));
- }
-}
- 
-function tarjeta_form_submit($form, &$form_state) {
- //My success processing
- drupal_set_message(t('Yay, your name is fine!'));
-}
-
-function get_calculated_values($data, $row){
+function get_calculated_values($data, $row, $nid = 0){
   $resp = new stdClass();
   $resp->suma_color_capa = 0;
   $resp->suma_total = 0;
-  $node = node_load($data->nid);
+  if($nid == 0){
+    $node = node_load($data->nid);
+  } else {
+    $node = node_load($nid);
+  }
   $items_cc = field_get_items('node', $node, 'field_color_y_capa');
   
   $i = 0;
   $resp->cc = array();
-  $resp->html_cc = '<table><thead><tr><td>Color</td><td>Capas</td></tr><thead><tbody>';
+  $resp->html_cc = '<table><thead><tr><th>Color</th><th>Capas</th></tr></thead><tbody>';
   foreach ($items_cc as $item) {
     $fc = field_collection_field_get_entity($item);
     $term = taxonomy_term_load($fc->field_color[LANGUAGE_NONE][0]['tid']);
     $resp->cc[$i] = new stdClass();
+    $resp->cc[$i]->color_tid = $term->tid;
     $resp->cc[$i]->color = $term->name;
     $resp->cc[$i]->capa = $fc->field_capas[LANGUAGE_NONE][0]['value'];
     $resp->html_cc .= '<tr><td>' . $resp->cc[$i]->color .'</td><td>' . $resp->cc[$i]->capa . '</td></tr>';
-    $resp->suma_color_capa = $resp->suma_color_capa + $fc->field_capas[LANGUAGE_NONE][0]['value'];
+    $resp->suma_color_capa = $resp->suma_color_capa + $fc->field_capas[LANGUAGE_NONE][0]['value'];    
+    $i++;
   }
   $resp->html_cc .= '</tbody><tfoot><tr><td>Total: </td><td>' . $resp->suma_color_capa . '</td></tr></tfoot></table>';
   
@@ -84,11 +125,12 @@ function get_calculated_values($data, $row){
   $items_tt = field_get_items('node', $node, 'field_talla_y_tanto');
   $i = 0;
   $resp->tt = array();
-  $resp->html_tt = '<table><thead><tr><td>Talla</td><td>Tanto</td><td>Subtotal</td></tr><thead><tbody>';
+  $resp->html_tt = '<table><thead><tr><th>Talla</th><th>Tanto</th><th>Subtotal</th></tr></thead><tbody>';
   foreach ($items_tt as $item) {    
     $fc = field_collection_field_get_entity($item);
     $term = taxonomy_term_load($fc->field_talla[LANGUAGE_NONE][0]['tid']);
     $resp->tt[$i] = new stdClass();
+    $resp->tt[$i]->talla_tid = $term->tid;
     $resp->tt[$i]->talla = $term->name;
     $resp->tt[$i]->tanto = $fc->field_tanto[LANGUAGE_NONE][0]['value'];
     $resp->html_tt .= '<tr><td>' . $resp->tt[$i]->talla .'</td><td>' . $resp->tt[$i]->tanto . '</td><td>' . ($resp->tt[$i]->tanto * $resp->suma_color_capa) . '</td></tr>';
