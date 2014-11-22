@@ -1,73 +1,5 @@
 <?php
 
-/**
- * Implements hook_menu()
- */
-function custom_functions_menu() {
- $items['tarjeta-produccion'] = array(
-  'title' => 'Tarjeta de producción', //The name of the menu that will be displayed
-//  'page callback' => 'tarjeta_page_callback', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
-//  'page arguments' => array(1), //put the name of the form here
-  //'access callback' => TRUE,
-  'access arguments' => array('access content')
- );
- return $items;
-}
- 
-
-function custom_functions_block_info() {
-  $blocks = array();
-  $blocks['tarjeta_produccion'] = array(
-    'info' => t('Tarjeta de produccion'),
-  );
-  $blocks['bloque_corte'] = array(
-    'info' => t('Bloque de corte'),
-  );
-  return $blocks;
-}
-
-function custom_functions_block_configure($delta='') {
-    $block = array();
-    
-    switch($delta) {
-            case 'tarjeta_produccion':
-                    $block['subject'] = t('Tarjeta de producción');
-                    $block['content'] = drupal_get_form('tarjeta_de_produccion_node_form');
-            break;
-          case 'bloque_corte':
-                    $block['subject'] = t('Bloque de corte');
-            $view = views_get_view('lista_de_cortes');
-            $view->set_display('block_1');
-            $view->set_arguments($_GET['nid']);
-            // change the amount of items to show
-            //$view->set_items_per_page(4);
-            $view->pre_execute();
-            $view->execute();
-            $block['content'] = $view->render();
-            break;
-    }
-     return $block;
-}
-
-function custom_functions_block_view($delta = '') {
-  // This example is adapted from node.module.
-  $block = array();
-
-  switch ($delta) {
-    case 'tarjeta_produccion':
-      module_load_include('inc', 'node', 'node.pages'); 
-      $node_form = new stdClass;
-      $node_form->type = 'tarjeta_de_produccion';
-      $node_form->language = LANGUAGE_NONE;
-      $block['subject'] = t('Tarjeta de producción');
-      $block['content'] = drupal_get_form('tarjeta_de_produccion_node_form', $node_form);
-    break;
-  }
-  return $block;
-}
-
-
-
 function get_form_tarjeta_de_produccion() {
   module_load_include('inc', 'node', 'node.pages'); 
   $node_form = new stdClass;
@@ -79,9 +11,6 @@ function get_form_tarjeta_de_produccion() {
 
 function custom_functions_form_alter(&$form, &$form_state, $form_id) {
   if($form_id == "tarjeta_de_produccion_node_form"){
-//    if(!isset($_GET['nid']))
-//      return;
-//    $info = get_calculated_values(null, null, $_GET['nid']);
     $b = 0;
     $form['phone'] = array(
       '#title'    => t('Phone'),
@@ -89,11 +18,9 @@ function custom_functions_form_alter(&$form, &$form_state, $form_id) {
       '#required' => TRUE,
     );
   }
-  $a = 0;
-  
 }
 
-function get_calculated_values($data, $row, $nid = 0){
+function get_corte_values($data, $row, $nid = 0){
   $resp = new stdClass();
   $resp->suma_color_capa = 0;
   $resp->suma_total = 0;
@@ -139,6 +66,13 @@ function get_calculated_values($data, $row, $nid = 0){
   }
   $resp->html_tt .= '</tbody><tfoot><tr><td></td><td>Total: </td><td>' . $resp->suma_total . '</td></tr></tfoot></table>';
   
+  $resp->html_actions = getActionsLinks($node);
+  
   return $resp;
 }
 
+function getActionsLinks($node){
+  $resp = new stdClass();
+  $resp->nueva_tarjeta_produccion = l('Crear Tarjeta de Producción', 't-produccion/' . $node->nid);
+  return $resp;
+}
