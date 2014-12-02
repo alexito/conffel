@@ -1,34 +1,154 @@
 <?php
 
 function get_form_tarjeta_de_produccion() {
+  global $user;
   module_load_include('inc', 'node', 'node.pages'); 
   $node_form = new stdClass;
   $node_form->type = 'tarjeta_de_produccion';
   $node_form->language = LANGUAGE_NONE;
+  $node_form->uid = $user->uid;
+  $node_form->status = 1;
+  $node_form->revision = FALSE;
+  $node_form->comment = 0;
+  $node_form->promote = 0;
+  $node_form->sticky = 0;
+  $node_form->log = NULL;
   $form = drupal_get_form('tarjeta_de_produccion_node_form', $node_form);
- return drupal_render($form);
+  return drupal_render($form);
 }
 
 function custom_functions_form_alter(&$form, &$form_state, $form_id) {
   if($form_id == "tarjeta_de_produccion_node_form"){
-    $b = 0;
-    $form['phone'] = array(
-      '#title'    => t('Phone'),
-      '#type'     => 'textfield',
-      '#required' => TRUE,
-    );
+    $tem = explode('/', $_GET['q']);
+    if($tem[0] == 't-produccion' && !isset($form['nid']['#value'])){
+      $tarjetas = get_t_producciones_del_corte($tem[1]);
+      $info = get_corte_values(null, null, $tem[1], $tarjetas);      
+      
+      $cc = array();
+      foreach($info->cc as $tem_cc){
+        $cc[$tem_cc->color_tid] = $tem_cc->color;
+      }
+      
+      $form['tp_color'] = array(
+        '#title'    => t('Seleccione un color'),
+        '#type' => 'select',
+        '#options' => $cc,
+        '#required' => TRUE,
+      );
+      
+      $tt = array();
+      
+      foreach($info->tt as $tem_tt){
+        $faltan = $tem_tt->subtotal;
+        if($tarjetas != NULL){
+          $faltan = $tem_tt->subtotal - $tarjetas->tallas[$tem_tt->talla_tid];
+        }
+        
+        $disabled = FALSE;
+        $mensaje = 'Faltan: <b>' . $faltan . '</b> por completar.';
+        
+        
+        if($faltan <= 0){
+          $disabled = TRUE;
+          $mensaje = 'Esta talla esta <b>COMPLETA</b>';
+        }
+        $form['tt_' . $tem_tt->talla_tid] = array(
+          '#attributes' => array(
+            'data-max' => $faltan,
+            'data-custom-num' => 1
+          ),
+          '#title'    => t('Talla: ' . $tem_tt->talla . ' (' . $mensaje . ')'),
+          '#type'     => 'textfield',
+          '#default_value' => $faltan,
+          '#disabled' => $disabled,
+          '#required' => TRUE,
+          '#description' => 'Máximo ' . $faltan,
+        );
+      }
+    }
+        
+    $form['field_color']['#access'] = FALSE;
+    $form['field_talla_y_cantidad']['#access'] = FALSE;
+    $form['field_nodo_corte']['#access'] = FALSE;
+    
   }
 }
 
-function get_corte_values($data, $row, $nid = 0){
+function custom_functions_node_presave($node){
+  if($node->type == 'tarjeta_de_produccion'){
+    $tem = explode('/', $_GET['q']);
+    
+    $node->field_color[LANGUAGE_NONE][0]['tid'] = $node->tp_color;
+    $node->field_nodo_corte[LANGUAGE_NONE][0]['nid'] = $tem[1];
+    $data = '';
+    
+    $v = taxonomy_vocabulary_machine_name_load('tallas');
+    $terms = taxonomy_get_tree($v->vid);
+    foreach ($terms as $term) {
+      $term_tid = 'tt_' . $term->tid;
+      if(isset($node->$term_tid)){
+        if($data != '')
+          $data .= '_';
+        $data .= $term->tid . ',' . $node->$term_tid;
+      }      
+    }    
+    $node->field_talla_y_cantidad[LANGUAGE_NONE][0]['value'] = $data;
+  }
+}
+
+function get_t_producciones_del_corte($nid){
+  
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'tarjeta_de_produccion')
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_nodo_corte', 'nid', $nid, '=')
+    ->execute();
+  
+  if (isset($result['node'])) {
+    $nids = array_keys($result['node']);
+    $nodes = node_load_multiple($nids);
+    
+    $resp = new stdClass();
+    $resp->tallas = array();
+    
+    foreach($nodes as $node){
+      $wrapper = entity_metadata_wrapper('node', $node);
+      $color = $wrapper->field_color->value();
+      $detalle = $wrapper->field_talla_y_cantidad->value();
+            
+      $tallas = explode('_', $detalle);
+      foreach($tallas as $talla){
+        $tem = explode(',', $talla);
+        
+        if(!isset($resp->tallas[$tem[0]])){
+          $resp->tallas[$tem[0]] = 0;
+        }
+        
+        $resp->tallas[$tem[0]] = $resp->tallas[$tem[0]] + $tem[1];
+      }      
+    }
+    
+    return $resp;
+  }
+  
+  return null;
+}
+
+function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
   $resp = new stdClass();
   $resp->suma_color_capa = 0;
   $resp->suma_total = 0;
+  $resp->suma_faltan = 0;
   if($nid == 0){
     $node = node_load($data->nid);
+    $tarjetas = get_t_producciones_del_corte($data->nid);
   } else {
-    $node = node_load($nid);
+    $node = node_load($nid);    
   }
+  
+  
   $items_cc = field_get_items('node', $node, 'field_color_y_capa');
   
   $i = 0;
@@ -52,7 +172,7 @@ function get_corte_values($data, $row, $nid = 0){
   $items_tt = field_get_items('node', $node, 'field_talla_y_tanto');
   $i = 0;
   $resp->tt = array();
-  $resp->html_tt = '<table><thead><tr><th>Talla</th><th>Tanto</th><th>Subtotal</th></tr></thead><tbody>';
+  $resp->html_tt = '<table><thead><tr><th>Talla</th><th>Tanto</th><th>Subtotal</th><th>Faltan</th></tr></thead><tbody>';
   foreach ($items_tt as $item) {    
     $fc = field_collection_field_get_entity($item);
     $term = taxonomy_term_load($fc->field_talla[LANGUAGE_NONE][0]['tid']);
@@ -60,11 +180,22 @@ function get_corte_values($data, $row, $nid = 0){
     $resp->tt[$i]->talla_tid = $term->tid;
     $resp->tt[$i]->talla = $term->name;
     $resp->tt[$i]->tanto = $fc->field_tanto[LANGUAGE_NONE][0]['value'];
-    $resp->html_tt .= '<tr><td>' . $resp->tt[$i]->talla .'</td><td>' . $resp->tt[$i]->tanto . '</td><td>' . ($resp->tt[$i]->tanto * $resp->suma_color_capa) . '</td></tr>';
+    $resp->tt[$i]->subtotal = ($resp->tt[$i]->tanto * $resp->suma_color_capa);
+    
+    $faltan = $resp->tt[$i]->subtotal;
+    if($tarjetas != NULL){
+      $faltan = $resp->tt[$i]->subtotal - $tarjetas->tallas[$term->tid];
+    }
+    
+    $resp->html_tt .= '<tr><td>' . $resp->tt[$i]->talla .'</td><td>' . $resp->tt[$i]->tanto .
+            '</td><td>' . $resp->tt[$i]->subtotal . '</td><td>' .
+            $faltan .'</td></tr>';
+    
     $resp->suma_total = $resp->suma_total + ($resp->tt[$i]->tanto * $resp->suma_color_capa);
+    $resp->suma_faltan = $resp->suma_faltan + $faltan;
     $i++;
   }
-  $resp->html_tt .= '</tbody><tfoot><tr><td></td><td>Total: </td><td>' . $resp->suma_total . '</td></tr></tfoot></table>';
+  $resp->html_tt .= '</tbody><tfoot><tr><td></td><td>Total: </td><td>' . $resp->suma_total . '</td><td>' . $resp->suma_faltan . '</td></tr></tfoot></table>';
   
   $resp->html_actions = getActionsLinks($node);
   
@@ -75,4 +206,16 @@ function getActionsLinks($node){
   $resp = new stdClass();
   $resp->nueva_tarjeta_produccion = l('Crear Tarjeta de Producción', 't-produccion/' . $node->nid);
   return $resp;
+}
+
+
+
+function softTrim($text, $count, $wrapText='...'){
+    if(strlen($text)>$count){
+        preg_match('/^.{0,' . $count . '}(?:.*?)\b/siu', $text, $matches);
+        $text = $matches[0];
+    }else{
+        $wrapText = '';
+    }
+    return $text . $wrapText;
 }
