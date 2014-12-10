@@ -2,46 +2,87 @@
   Drupal.behaviors.custom_functions = {
     attach: function (context, settings) {
       $(window).load(function () {
-        
-        //Deshabilita campos del diario q tienen valores repetidos
-        $('body.page-diario .view-diario table.views-table').each(function(i, e){
-            $(this).find('.views-field-php input').each(function(ind, el){              
-              if(ind > 0){
-                $(this).attr('disabled', true);
-              }
-            });
-            $(this).find('.views-field-php-2 input').each(function(ind, el){              
-              if(ind > 0){
-                $(this).attr('disabled', true);
-              }
-            });
-          });
-        
-        //Guarda el diario.
-        $('.guardar-diario').click(function(){
-          $('body.page-diario .view-diario table .item-diario').each(function(i, e){
+
+        //GUARDAR DIARIO
+        $('span.guardar-diario').click(function () {
+          var data = {info: []};
+
+          $('.views-table.table-diario').each(function (i, table) {
+            var mod_id = $('tbody tr.item-diario', table).attr('data-mod-id');
+
+            data.info[i] = {mod_id: mod_id, empleados: [], tarjetas: '', vxm: ''};
             
+            $('tbody tr.item-diario', table).each(function (ind, tr) {
+              nid = $('td.views-field-nid', tr).text().trim();
+              vxm = $('input#vxm_' + nid, tr).val();
+              ctp = $('input#ctp_' + nid, tr).val();
+              rh = $('input#rh_' + nid, tr).val();
+              uds = $('input#uds_' + nid, tr).val();
+              
+              data.info[i].tarjetas = ctp;
+              data.info[i].vxm = vxm;
+              
+              data.info[i].empleados[ind] = {
+                id_emp: nid,
+                rh: rh,
+                uds: uds
+              };
+            });
+
+            if ((i + 1) === $('.views-table.table-diario').length) {
+              $.ajax({
+                type: "POST",
+                url: 'guardar-diario',
+                data: data,
+                success: function (resp) {
+                  console.log(resp);
+                },
+              });
+            }
+
           });
         });
-        
+
+
+        //Deshabilita campos del diario q tienen valores repetidos
+        $('body.page-diario .view-diario table.views-table').each(function (i, e) {
+          $(this).find('.views-field-php input').each(function (ind, el) {
+            if (ind > 0) {
+              $(this).attr('disabled', true);
+            }
+          });
+          $(this).find('.views-field-php-2 input').each(function (ind, el) {
+            if (ind > 0) {
+              $(this).attr('disabled', true);
+            }
+          });
+        });
+
+        //Guarda el diario.
+        $('.guardar-diario').click(function () {
+          $('body.page-diario .view-diario table .item-diario').each(function (i, e) {
+
+          });
+        });
+
 
         $('input[data-custom-num="1"]').each(function (i, e) {
-          
+
           $(e).blur(function () {
             val = $(this).val();
-            
-            if($(this).parent().hasClass('views-field-php')){              
+
+            if ($(this).parent().hasClass('views-field-php')) {
               tbody = $(this).closest('tbody');
-              $('.views-field-php input', tbody).val(val);              
-            }else if($(this).parent().hasClass('views-field-php-2')){              
+              $('.views-field-php input', tbody).val(val);
+            } else if ($(this).parent().hasClass('views-field-php-2')) {
               tbody = $(this).closest('tbody');
-              $('.views-field-php-2 input', tbody).val(val);              
-            }else{
+              $('.views-field-php-2 input', tbody).val(val);
+            } else {
               max = $(this).attr('data-max');
 
-              if(val > max){
+              if (val > max) {
                 $(this).val(max);
-                alert('El valor ingresado supera el maximo para este item. Recuerde no superar el valor maximo.');              
+                alert('El valor ingresado supera el maximo para este item. Recuerde no superar el valor maximo.');
               }
             }
           });
@@ -66,9 +107,6 @@
 
       });
 
-
-      function calendarWidget(el, params) {
-      }
 
     }
   };

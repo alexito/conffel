@@ -1,4 +1,4 @@
-<table <?php if ($classes) { print 'class="'. $classes . '" '; } ?><?php print $attributes; ?>>
+<table <?php if ($classes) { print 'class="table-diario '. $classes . '" '; } ?><?php print $attributes; ?>>
    <?php if (!empty($title) || !empty($caption)) : ?>
      <h4><?php print $caption . $title; ?></h4>
   <?php endif; ?>
@@ -17,7 +17,7 @@
   <?php endif; ?>
   <tbody>
     <?php foreach ($rows as $row_count => $row): ?>
-      <tr <?php if ($row_classes[$row_count]) { print 'class="' . implode(' ', $row_classes[$row_count]) . ' ' . $row['tid'] . '"';  } ?>>
+      <tr <?php if ($row_classes[$row_count]) { print 'class="' . implode(' ', $row_classes[$row_count]) . '" data-mod-id="' . $row['tid'] . '"';  } ?>>
         <?php foreach ($row as $field => $content): ?>
         <?php if($field != "tid"){?>
           <td <?php if ($field_classes[$field][$row_count]) { print 'class="'. $field_classes[$field][$row_count] . '" '; } ?><?php print drupal_attributes($field_attributes[$field][$row_count]); ?>>

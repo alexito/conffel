@@ -219,3 +219,43 @@ function softTrim($text, $count, $wrapText='...'){
     }
     return $text . $wrapText;
 }
+
+/**
+ * Implement hook_menu
+ */
+ function custom_functions_menu(){
+   $items['guardar-diario'] = array(
+    'page callback' => '_custom_functions_guardar_diario',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+ }
+ 
+ function _custom_functions_guardar_diario() {
+   if(isset($_POST['info'])){
+     $info = $_POST['info'];
+     
+     foreach($info as $modulo){
+        $mod_id = $modulo['mod_id'];
+        $tar_ids = explode(',', $modulo['tarjetas']);
+        $tarjetas = [];
+        
+        if(count($tar_ids) > 0 && $tar_ids[0] != '' ){
+          $modulo['tarjetas'] = $tar_ids;
+          $tarjetas = node_load_multiple($tar_ids, array('type' => 'tarjeta_de_produccion'));
+        }
+        if(count($tarjetas) > 0){
+          crear_contenido($modulo['vxm'], $tarjetas, $modulo['empleados']);
+        }
+     }     
+   }
+   
+  $data = array("ok");
+  return drupal_json_output($data);
+}
+
+function crear_contenido($vxm, $tarjetas, $empleados){
+  $a = 0;
+}
