@@ -21,11 +21,11 @@
               
               data.info[i].tarjetas = ctp;
               data.info[i].vxm = vxm;
+              data.info[i].uds = uds;
               
               data.info[i].empleados[ind] = {
-                id_emp: nid,
-                rh: rh,
-                uds: uds
+                emp_id: nid,
+                rh: rh                
               };
             });
 
@@ -56,6 +56,11 @@
               $(this).attr('disabled', true);
             }
           });
+          $(this).find('.views-field-php-3 input').each(function (ind, el) {
+            if (ind > 0) {
+              $(this).attr('disabled', true);
+            }
+          });
         });
 
         //Guarda el diario.
@@ -77,6 +82,9 @@
             } else if ($(this).parent().hasClass('views-field-php-2')) {
               tbody = $(this).closest('tbody');
               $('.views-field-php-2 input', tbody).val(val);
+            } else if ($(this).parent().hasClass('views-field-php-3')) {
+              tbody = $(this).closest('tbody');
+              $('.views-field-php-3 input', tbody).val(val);
             } else {
               max = $(this).attr('data-max');
 
