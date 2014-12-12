@@ -229,8 +229,20 @@ function softTrim($text, $count, $wrapText='...'){
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
+   $items['imprimir-corte/%node'] = array(
+    'page callback' => '_custom_functions_imprimir_corte',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
+ }
+ 
+ function _custom_functions_imprimir_corte($node){
+   
+   $output = '';
+   return theme('imprimir_corte', array('output' => $output));
  }
  
  function _custom_functions_guardar_diario() {

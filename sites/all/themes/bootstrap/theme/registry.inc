@@ -99,6 +99,10 @@ function _bootstrap_theme(&$existing, $type, $theme, $path) {
     'bootstrap_panel' => array(
       'render element' => 'element',
     ),
+      'imprimir_corte' => array(
+      'variables' => array('output' => null),
+      'template' => 'templates/imprimir_corte'
+    )
   );
 
   // Process custom. This should be used again for any sub-themes.
