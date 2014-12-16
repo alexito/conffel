@@ -102,6 +102,10 @@ function _bootstrap_theme(&$existing, $type, $theme, $path) {
       'imprimir_corte' => array(
       'variables' => array('output' => null),
       'template' => 'templates/imprimir_corte'
+    ),
+      'imprimir_tarjeta_produccion' => array(
+      'variables' => array('output' => null),
+      'template' => 'templates/imprimir_tarjeta_produccion'
     )
   );
 

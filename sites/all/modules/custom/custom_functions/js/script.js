@@ -63,14 +63,15 @@
           });
         });
 
-        //Guarda el diario.
-        $('.guardar-diario').click(function () {
-          $('body.page-diario .view-diario table .item-diario').each(function (i, e) {
+        //Elimina elementos innecesarios de la impresion
+        $('.print-site_name, .print-breadcrumb, .print-hr').remove();
+        
+        if(window.location.href.indexOf('/print/') > 0){
+          $('.remove-on-print').remove()
+        }
+        
 
-          });
-        });
-
-
+        //Configura los imputs para permitir solo numeros
         $('input[data-custom-num="1"]').each(function (i, e) {
 
           $(e).blur(function () {

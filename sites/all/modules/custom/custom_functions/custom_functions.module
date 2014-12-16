@@ -18,6 +18,7 @@ function get_form_tarjeta_de_produccion() {
 }
 
 function custom_functions_form_alter(&$form, &$form_state, $form_id) {
+  $a = 0;
   if($form_id == "tarjeta_de_produccion_node_form"){
     $tem = explode('/', $_GET['q']);
     if($tem[0] == 't-produccion' && !isset($form['nid']['#value'])){
@@ -71,9 +72,12 @@ function custom_functions_form_alter(&$form, &$form_state, $form_id) {
     $form['field_talla_y_cantidad']['#access'] = FALSE;
     $form['field_nodo_corte']['#access'] = FALSE;
     
+    $form['actions']['submit']['#submit'][] = 'custom_submit';
   }
 }
-
+function custom_submit($form, &$form_state){
+  $form_state['redirect'] = 'imprimir-tarjeta-produccion/'. $form_state['nid']; 
+}
 function custom_functions_node_presave($node){
   if($node->type == 'tarjeta_de_produccion'){
     $tem = explode('/', $_GET['q']);
@@ -93,6 +97,7 @@ function custom_functions_node_presave($node){
       }      
     }    
     $node->field_talla_y_cantidad[LANGUAGE_NONE][0]['value'] = $data;
+    
   }
 }
 
@@ -112,8 +117,9 @@ function get_t_producciones_del_corte($nid){
     
     $resp = new stdClass();
     $resp->tallas = array();
-    
+    $resp->tarjetas = array();
     foreach($nodes as $node){
+      $resp->tarjetas[] = $node;
       $wrapper = entity_metadata_wrapper('node', $node);
       $color = $wrapper->field_color->value();
       $detalle = $wrapper->field_talla_y_cantidad->value();
@@ -147,8 +153,7 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
   } else {
     $node = node_load($nid);    
   }
-  
-  
+    
   $items_cc = field_get_items('node', $node, 'field_color_y_capa');
   
   $i = 0;
@@ -197,14 +202,30 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
   }
   $resp->html_tt .= '</tbody><tfoot><tr><td></td><td>Total: </td><td>' . $resp->suma_total . '</td><td>' . $resp->suma_faltan . '</td></tr></tfoot></table>';
   
+  if($tarjetas != NULL){
+    $resp->html_tt .= '<span class="col-sm-12"><div style="font-size: 11px;"><b>Tarjetas de Producción: </b></div>';
+    foreach ($tarjetas->tarjetas as $t ){
+      $resp->html_tt .= '<a target="_blank" href="imprimir-tarjeta-produccion/' . $t->nid . '">' . $t->nid . '</a>, ';
+    }
+    $resp->html_tt .= '</span>';
+  }
+  
   $resp->html_actions = getActionsLinks($node);
   
+  $resp->user = user_load($node->uid);
+  $resp->node = $node;
+  $resp->modelo = taxonomy_term_load($node->field_modelo[LANGUAGE_NONE][0]['tid']);
+  $resp->tela = taxonomy_term_load($node->field_tela[LANGUAGE_NONE][0]['tid']);
   return $resp;
 }
 
 function getActionsLinks($node){
   $resp = new stdClass();
-  $resp->nueva_tarjeta_produccion = l('Crear Tarjeta de Producción', 't-produccion/' . $node->nid);
+  $resp->nueva_tarjeta_produccion = '<ul>' .
+          '<li>' . l('Crear Tarjeta de Producción', 't-produccion/' . $node->nid, array('attributes' => array('target'=>'_blank'))) . '</li>' . 
+          '<li>' . l('Imprimir Corte', 'print/imprimir-corte/' . $node->nid, array('attributes' => array('target'=>'_blank'))) . '</li>' .
+          '<li>' . '<a href="node/' . $node->nid . '/edit?destination=inicio?nid=' . $node->nid . '">Editar Corte</a></li>' .
+          '</ul>';
   return $resp;
 }
 
@@ -229,8 +250,14 @@ function softTrim($text, $count, $wrapText='...'){
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
-   $items['imprimir-corte/%node'] = array(
+  $items['imprimir-corte/%node'] = array(
     'page callback' => '_custom_functions_imprimir_corte',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['imprimir-tarjeta-produccion/%node'] = array(
+    'page callback' => '_custom_functions_imprimir_tarjeta_produccion',
     'page arguments' => array(1),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
@@ -239,10 +266,53 @@ function softTrim($text, $count, $wrapText='...'){
   return $items;
  }
  
- function _custom_functions_imprimir_corte($node){
-   
-   $output = '';
+ function _custom_functions_imprimir_corte($node){   
+   $output = get_corte_values(null, null, $node->nid, null);
    return theme('imprimir_corte', array('output' => $output));
+ }
+ 
+ function _custom_functions_imprimir_tarjeta_produccion($node){   
+   $wrapper = entity_metadata_wrapper('node', $node);
+   $node->cliente_nombre = $wrapper->field_cliente->name->value();
+   $node->modelo_nombre = $wrapper->field_nodo_corte->field_modelo->name->value();
+   $node->color_nombre = $wrapper->field_color->name->value();
+   $node->tela_nombre = $wrapper->field_nodo_corte->field_tela->name->value();
+   $node->corte_fecha = date('Y-m-d', $wrapper->field_nodo_corte->created->value());
+   
+   $corte = node_load($node->field_nodo_corte[LANGUAGE_NONE][0]['nid']);
+   $user_corte = user_load($corte->uid);
+   if(isset($user_corte->field_nombre_y_apellido[LANGUAGE_NONE][0])){
+     $node->user_corte_nombre = $user_corte->field_nombre_y_apellido[LANGUAGE_NONE][0]['value'];
+   }else{
+     $node->user_corte_nombre = $corte->uid;
+   }
+   
+   $tc = $wrapper->field_talla_y_cantidad->value();
+   
+   $tem1 = explode('_', $tc);
+   
+   $tallas_cantidades = array();
+   $cantidad_total = 0;
+   $i = 0;
+   foreach($tem1 as $tc){
+     $tem2 = explode(',', $tc);
+     $term = taxonomy_term_load($tem2[0]);
+     
+     $tallas_cantidades[$i] = new stdClass();
+     $tallas_cantidades[$i]->talla = $term->name;
+     $tallas_cantidades[$i++]->cantidad = $tem2[1];
+     
+     $cantidad_total = $cantidad_total + $tem2[1];
+   }
+   
+   $node->tallas_cantidades = $tallas_cantidades;
+   $node->cantidad_total = $cantidad_total;
+   
+   
+   
+   $a = 0;
+   
+   return theme('imprimir_tarjeta_produccion', array('output' => $node));
  }
  
  function _custom_functions_guardar_diario() {
