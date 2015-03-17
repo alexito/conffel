@@ -262,8 +262,33 @@ function softTrim($text, $count, $wrapText='...'){
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
+  $items['imprimir-diario/%'] = array(
+    'page callback' => '_custom_functions_imprimir_diario',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
+ }
+ 
+function _custom_functions_imprimir_diario($fecha){
+  $output = new stdClass();
+  $output->fecha = $fecha;
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'diario')
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_fecha_diario', 'value', $fecha . '% %00', 'like')
+    ->fieldOrderBy('field_modulo', 'tid', 'asc')
+    ->execute();
+  if (isset($result['node'])) {
+    $nids = array_keys($result['node']);
+    $output->nodes = node_load_multiple($nids);    
+  }
+    
+   return theme('imprimir_diario', array('output' => $output));
  }
  
  function _custom_functions_imprimir_corte($node){   
@@ -355,6 +380,13 @@ function crear_contenido($tarjetas, $modulo){
   $node->comment = 0; // 0 = comments disabled, 1 = read only, 2 = read/write
   
   $node->field_fecha_diario[LANGUAGE_NONE][0]['value'] = date('Y-m-d') . ' 00:00:00';
+  $node->field_fecha_diario[LANGUAGE_NONE][0]['value2'] = date('Y-m-d') . ' 00:00:00';
+  $node->field_fecha_diario[LANGUAGE_NONE][0]['offset'] = '-18000';
+  $node->field_fecha_diario[LANGUAGE_NONE][0]['offset2'] = '-18000';
+  $node->field_fecha_diario[LANGUAGE_NONE][0]['show_todate'] = true;
+  $node->field_fecha_diario[LANGUAGE_NONE][0]['timezone'] = 'America/Guayaquil';
+  $node->field_fecha_diario[LANGUAGE_NONE][0]['timezone_db'] = 'America/Guayaquil';
+  $node->field_fecha_diario[LANGUAGE_NONE][0]['date_type'] = 'detetime';
   $node->field_modulo[LANGUAGE_NONE][0]['tid'] = $modulo['mod_id'];
     
   $term = taxonomy_term_load($modulo['mod_id']);

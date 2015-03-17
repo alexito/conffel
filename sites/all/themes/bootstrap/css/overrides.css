@@ -10,3 +10,36 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
   padding: 3px 4px;
   border-right: 1px dashed #ccc;
 }
+#calendar h3{
+  margin-top: 0;
+  margin-left: 2%;
+}
+#calendar{
+  border: 1px solid #ccc;
+  padding: 10px 5px;
+  border-radius: 15px;
+  margin: 10px 0;
+}
+#calendar table{
+  width: 98%;
+  margin-left: 3%;
+}
+#calendar table td.current-month{
+  
+}
+#calendar table td.current-month.today{
+  color: #ed3e49;
+  font-weight: 700;
+}
+#calendar table td.other-month{
+  color: #ccc;
+}
+.m-back {
+  margin-left: 20px;
+  cursor: pointer;
+}
+.m-next {
+  float: right;
+  margin-right: 20px;
+  cursor: pointer;
+}

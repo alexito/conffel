@@ -106,6 +106,10 @@ function _bootstrap_theme(&$existing, $type, $theme, $path) {
       'imprimir_tarjeta_produccion' => array(
       'variables' => array('output' => null),
       'template' => 'templates/imprimir_tarjeta_produccion'
+    ),
+      'imprimir_diario' => array(
+      'variables' => array('output' => null),
+      'template' => 'templates/imprimir_diario'
     )
   );
 
