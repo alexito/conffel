@@ -43,3 +43,6 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
   margin-right: 20px;
   cursor: pointer;
 }
+.page-t-produccion .node-tarjeta_de_produccion-form .form-item-title {
+  display: none;
+}

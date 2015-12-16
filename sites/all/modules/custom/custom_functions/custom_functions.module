@@ -22,20 +22,10 @@ function custom_functions_form_alter(&$form, &$form_state, $form_id) {
   if($form_id == "tarjeta_de_produccion_node_form"){
     $tem = explode('/', $_GET['q']);
     if($tem[0] == 't-produccion' && !isset($form['nid']['#value'])){
+      $form['title']['#default_value'] = arg(1);
+
       $tarjetas = get_t_producciones_del_corte($tem[1]);
-      $info = get_corte_values(null, null, $tem[1], $tarjetas);      
-      
-      $cc = array();
-      foreach($info->cc as $tem_cc){
-        $cc[$tem_cc->color_tid] = $tem_cc->color;
-      }
-      
-      $form['tp_color'] = array(
-        '#title'    => t('Seleccione un color'),
-        '#type' => 'select',
-        '#options' => $cc,
-        '#required' => TRUE,
-      );
+      $info = get_corte_values(null, null, $tem[1], $tarjetas);
       
       $tt = array();
       
@@ -75,9 +65,11 @@ function custom_functions_form_alter(&$form, &$form_state, $form_id) {
     $form['actions']['submit']['#submit'][] = 'custom_submit';
   }
 }
+
 function custom_submit($form, &$form_state){
   $form_state['redirect'] = 'imprimir-tarjeta-produccion/'. $form_state['nid']; 
 }
+
 function custom_functions_node_presave($node){
   if($node->type == 'tarjeta_de_produccion'){
     $tem = explode('/', $_GET['q']);
@@ -144,7 +136,6 @@ function get_t_producciones_del_corte($nid){
 
 function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
   $resp = new stdClass();
-  $resp->suma_color_capa = 0;
   $resp->suma_total = 0;
   $resp->suma_faltan = 0;
   if($nid == 0){
@@ -153,54 +144,34 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
   } else {
     $node = node_load($nid);    
   }
-    
-  $items_cc = field_get_items('node', $node, 'field_color_y_capa');
-  
-  $i = 0;
-  $resp->cc = array();
-  $resp->html_cc = '<table><thead><tr><th>Color</th><th>Capas</th></tr></thead><tbody>';
-  foreach ($items_cc as $item) {
-    $fc = field_collection_field_get_entity($item);
-    $term = taxonomy_term_load($fc->field_color[LANGUAGE_NONE][0]['tid']);
-    $resp->cc[$i] = new stdClass();
-    $resp->cc[$i]->color_tid = $term->tid;
-    $resp->cc[$i]->color = $term->name;
-    $resp->cc[$i]->capa = $fc->field_capas[LANGUAGE_NONE][0]['value'];
-    $resp->html_cc .= '<tr><td>' . $resp->cc[$i]->color .'</td><td>' . $resp->cc[$i]->capa . '</td></tr>';
-    $resp->suma_color_capa = $resp->suma_color_capa + $fc->field_capas[LANGUAGE_NONE][0]['value'];    
-    $i++;
-  }
-  $resp->html_cc .= '</tbody><tfoot><tr><td>Total: </td><td>' . $resp->suma_color_capa . '</td></tr></tfoot></table>';
-  
-  
-  
-  $items_tt = field_get_items('node', $node, 'field_talla_y_tanto');
+
   $i = 0;
   $resp->tt = array();
-  $resp->html_tt = '<table><thead><tr><th>Talla</th><th>Tanto</th><th>Subtotal</th><th>Faltan</th></tr></thead><tbody>';
-  foreach ($items_tt as $item) {    
+  $resp->html_tt = '<table><thead><tr><th>Talla</th><th>Cantidad</th><th>Faltan</th></tr></thead><tbody>';
+
+  $items_tt = field_get_items('node', $node, 'field_tallas_y_cantidades');
+
+  foreach ($items_tt as $item) {
     $fc = field_collection_field_get_entity($item);
     $term = taxonomy_term_load($fc->field_talla[LANGUAGE_NONE][0]['tid']);
     $resp->tt[$i] = new stdClass();
     $resp->tt[$i]->talla_tid = $term->tid;
     $resp->tt[$i]->talla = $term->name;
-    $resp->tt[$i]->tanto = $fc->field_tanto[LANGUAGE_NONE][0]['value'];
-    $resp->tt[$i]->subtotal = ($resp->tt[$i]->tanto * $resp->suma_color_capa);
+    $resp->tt[$i]->subtotal = ($fc->field_cantidad[LANGUAGE_NONE][0]['value']);
     
     $faltan = $resp->tt[$i]->subtotal;
     if($tarjetas != NULL){
       $faltan = $resp->tt[$i]->subtotal - $tarjetas->tallas[$term->tid];
     }
     
-    $resp->html_tt .= '<tr><td>' . $resp->tt[$i]->talla .'</td><td>' . $resp->tt[$i]->tanto .
-            '</td><td>' . $resp->tt[$i]->subtotal . '</td><td>' .
+    $resp->html_tt .= '<tr><td>' . $resp->tt[$i]->talla .'</td><td>' . $resp->tt[$i]->subtotal . '</td><td>' .
             $faltan .'</td></tr>';
     
-    $resp->suma_total = $resp->suma_total + ($resp->tt[$i]->tanto * $resp->suma_color_capa);
+    $resp->suma_total = $resp->suma_total + ($resp->tt[$i]->subtotal);
     $resp->suma_faltan = $resp->suma_faltan + $faltan;
     $i++;
   }
-  $resp->html_tt .= '</tbody><tfoot><tr><td></td><td>Total: </td><td>' . $resp->suma_total . '</td><td>' . $resp->suma_faltan . '</td></tr></tfoot></table>';
+  $resp->html_tt .= '</tbody><tfoot><tr><td>Total: </td><td>' . $resp->suma_total . '</td><td>' . $resp->suma_faltan . '</td></tr></tfoot></table>';
   
   if($tarjetas != NULL){
     $resp->html_tt .= '<span class="col-sm-12"><div style="font-size: 11px;"><b>Tarjetas de Producción: </b></div>';
@@ -221,11 +192,10 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
 
 function getActionsLinks($node){
   $resp = new stdClass();
-  $resp->nueva_tarjeta_produccion = '<ul>' .
-          '<li>' . l('Crear Tarjeta de Producción', 't-produccion/' . $node->nid, array('attributes' => array('target'=>'_blank'))) . '</li>' . 
-          '<li>' . l('Imprimir Corte', 'print/imprimir-corte/' . $node->nid, array('attributes' => array('target'=>'_blank'))) . '</li>' .
-          '<li>' . '<a href="node/' . $node->nid . '/edit?destination=inicio?nid=' . $node->nid . '">Editar Corte</a></li>' .
-          '</ul>';
+  $resp->nueva_tarjeta_produccion =
+    '<p><a href="t-produccion/' . $node->nid . '" class="btn btn-success" target="_blank"> </a> Crear Tarjeta de Producción</p>' .
+    '<p><a href="print/imprimir-corte/' . $node->nid . '" class="btn btn-info" target="_blank"> </a> Imprimir Corte</p>' .
+    '<p><a href="node/' . $node->nid . '/edit?destination=inicio?nid=' . $node->nid . '" class="btn btn-danger"> </a> Editar Corte</p>';
   return $resp;
 }
 

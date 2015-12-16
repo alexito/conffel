@@ -59,18 +59,15 @@
     <table class="table table-bordered">
       <tr>        
         <td style="text-align:center;"><b>TALLAS</b></td>
-        <td style="text-align:center;"><b>TANTOS</b></td>
         <td style="text-align:center;"><b>TOTAL</b></td>
       </tr>
       <?php for ($i = 0; $i < count($output->tt); $i++) { ?>
         <tr>
           <td> <?php print $output->tt[$i]->talla ?></td>
-          <td> <?php print $output->tt[$i]->tanto ?></td>
           <td> <?php print $output->tt[$i]->subtotal ?></td>
         </tr>
       <?php } ?>
       <tr>
-        <td></td>
         <td><b><b>TOTAL</b>:</b></td>
         <td><?php print $output->suma_total ?></td>
       </tr>
@@ -80,6 +77,8 @@
         <td>
           <b>OBSERVACIONES: </b>          
           <?php print $output->node->field_observaciones[LANGUAGE_NONE][0]['value']; ?>
+          <br>
+          <br>
         </td>
       </tr>
     </table>
@@ -88,25 +87,25 @@
     <table class="table table-bordered">
       <tr>
         <td style="text-align:center;"><b>TALLAS</b></td>
-        <td style="text-align:center;"><b>TANTOS</b></td>
         <td style="text-align:center;"><b>TOTAL</b></td>
       </tr>
       <?php for ($i = 0; $i < count($output->tt); $i++) { ?>
         <tr>
           <td> </td>
           <td> </td>
-          <td> </td>
         </tr>
       <?php } ?>
       <tr>
-        <td></td>
         <td><b><b>TOTAL</b>:</b></td>
         <td></td>
       </tr>
     </table>
     <table class="table table-bordered">
       <tr>
-        <td><b>OBSERVACIONES: </b></td>
+        <td><b>OBSERVACIONES: </b>
+          <br>
+          <br>
+        </td>
       </tr>
     </table>
   </span>
@@ -163,11 +162,14 @@
           <b>PRENDAS</b>
         </td>
       </tr>
-      <?php foreach ($output->cc as $cc) { ?>
+      <?php
+      foreach ($output->node->field_tela[LANGUAGE_NONE] as $tid) {
+        $term = taxonomy_term_load($tid['tid']);
+        ?>
         <tr>
-          <td><?php print $output->tela->name; ?></td>
-          <td><?php print $cc->color; ?></td>
-          <td><?php print $cc->capa; ?></td>
+          <td><?php print $term->name; ?></td>
+          <td></td>
+          <td></td>
           <td></td>
           <td></td>
           <td></td>
@@ -243,7 +245,7 @@
           <b>PRENDAS</b>
         </td>
       </tr>
-      <?php foreach ($output->cc as $cc) { ?>
+      <?php foreach($output->node->field_tela[LANGUAGE_NONE] as $tid) { ?>
         <tr>
           <td></td>
           <td></td>
