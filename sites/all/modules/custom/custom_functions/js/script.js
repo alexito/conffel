@@ -77,30 +77,23 @@
         if (window.location.href.indexOf('/print/') > 0) {
           $('.remove-on-print').remove()
         }
-
+        $('body').click(function(){
+          $('.msg-text').fadeOut(800, function(){
+            $(this).remove();
+          });
+        });
 
         //Configura los imputs para permitir solo numeros
         $('input[data-custom-num="1"]').each(function (i, e) {
 
           $(e).blur(function () {
-            val = $(this).val();
-
-            if ($(this).parent().hasClass('views-field-php')) {
-              tbody = $(this).closest('tbody');
-              $('.views-field-php input', tbody).val(val);
-            } else if ($(this).parent().hasClass('views-field-php-2')) {
-              tbody = $(this).closest('tbody');
-              $('.views-field-php-2 input', tbody).val(val);
-            } else if ($(this).parent().hasClass('views-field-php-3')) {
-              tbody = $(this).closest('tbody');
-              $('.views-field-php-3 input', tbody).val(val);
-            } else {
-              max = $(this).attr('data-max');
-
-              if (val > max) {
-                $(this).val(max);
-                alert('El valor ingresado supera el maximo para este item. Recuerde no superar el valor maximo.');
-              }
+            var val = $(this).val();
+            var max = $(this).attr('data-max');
+            if (parseInt(val) > parseInt(max)) {
+              $(this).val(max);
+              $('body').append('<div class="msg-text">El valor ingresado supera el máximo para este item. Recuerde no superar el valor máximo.</div>');
+              $('.msg-text').fadeOut(0);
+              $('.msg-text').fadeIn(800);
             }
           });
           $(e).keydown(function (el)
@@ -121,6 +114,11 @@
                     (key >= 96 && key <= 105));
           });
         });
+
+        // TARJETA DE PRODUCCION
+        $('input.field_talla').parent().addClass('field_talla_wrapper');
+        var vista = $('#tarjeta-de-produccion-node-form .view-id-lista_de_cortes').detach();
+        $('#tarjeta-de-produccion-node-form > div').prepend(vista);
 
       });
 

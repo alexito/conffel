@@ -18,49 +18,77 @@ function get_form_tarjeta_de_produccion() {
 }
 
 function custom_functions_form_alter(&$form, &$form_state, $form_id) {
-  $a = 0;
-  if($form_id == "tarjeta_de_produccion_node_form"){
-    $tem = explode('/', $_GET['q']);
-    if($tem[0] == 't-produccion' && !isset($form['nid']['#value'])){
-      $form['title']['#default_value'] = arg(1);
+$a = 0;
+  if ($form_id != 'views_exposed_form' && isset($form['nid']) && $form['nid']['#value'] == null) {
+    $form['title']['#default_value'] = 'nulo';
+  }
+  if($form_id == "tarjeta_de_produccion_node_form") {
 
-      $tarjetas = get_t_producciones_del_corte($tem[1]);
-      $info = get_corte_values(null, null, $tem[1], $tarjetas);
-      
+    $view_rendered = '';
+    if (isset($_GET['corte'])) {
+      $corte = $_GET['corte'];
+      $view = views_get_view('lista_de_cortes');
+      $view->set_display('page_1');
+      $view->set_arguments(array($corte));
+      // change the amount of items to show
+      $view->set_items_per_page(1);
+      $view->pre_execute();
+      $view->execute();
+      $view_rendered = $view->render();
+
+
+      //$form['title']['#default_value'] = $corte;
+      $form['field_nodo_corte'][LANGUAGE_NONE]['#default_value'] = $corte;
+
+
+
+      $tarjetas = get_t_producciones_del_corte($corte);
+      $info = get_corte_values(NULL, NULL, $corte, $tarjetas);
+
       $tt = array();
-      
-      foreach($info->tt as $tem_tt){
+
+      foreach ($info->tt as $tem_tt) {
         $faltan = $tem_tt->subtotal;
-        if($tarjetas != NULL){
+        if ($tarjetas != NULL) {
           $faltan = $tem_tt->subtotal - $tarjetas->tallas[$tem_tt->talla_tid];
         }
-        
+
         $disabled = FALSE;
-        $mensaje = 'Faltan: <b>' . $faltan . '</b> por completar.';
-        
-        
-        if($faltan <= 0){
+        $mensaje = '<code>Faltan:' . $faltan . '</code>';
+
+
+        if ($faltan <= 0) {
           $disabled = TRUE;
           $mensaje = 'Esta talla esta <b>COMPLETA</b>';
         }
         $form['tt_' . $tem_tt->talla_tid] = array(
           '#attributes' => array(
             'data-max' => $faltan,
-            'data-custom-num' => 1
+            'data-custom-num' => 1,
+            'class' => array('field_talla')
           ),
-          '#title'    => t('Talla: ' . $tem_tt->talla . ' (' . $mensaje . ')'),
-          '#type'     => 'textfield',
+          '#title' => t('Talla: ' . $tem_tt->talla . ' (' . $mensaje . ')'),
+          '#type' => 'textfield',
           '#default_value' => $faltan,
           '#disabled' => $disabled,
           '#required' => TRUE,
           '#description' => 'Máximo ' . $faltan,
+          '#weight' => 50,
         );
       }
+
+
     }
+
+    $form['some_text'] = array(
+      '#markup' => $view_rendered
+    );
+
+
         
     $form['field_color']['#access'] = FALSE;
     $form['field_talla_y_cantidad']['#access'] = FALSE;
-    $form['field_nodo_corte']['#access'] = FALSE;
+    //$form['field_nodo_corte']['#access'] = FALSE;
     
     $form['actions']['submit']['#submit'][] = 'custom_submit';
   }
@@ -70,27 +98,59 @@ function custom_submit($form, &$form_state){
   $form_state['redirect'] = 'imprimir-tarjeta-produccion/'. $form_state['nid']; 
 }
 
-function custom_functions_node_presave($node){
-  if($node->type == 'tarjeta_de_produccion'){
-    $tem = explode('/', $_GET['q']);
-    
-    $node->field_color[LANGUAGE_NONE][0]['tid'] = $node->tp_color;
-    $node->field_nodo_corte[LANGUAGE_NONE][0]['nid'] = $tem[1];
-    $data = '';
+function custom_functions_node_presave($node) {
+  $a = 0;
+  if($node->type == 'corte') {
+    if ($node->is_new) {
+      $node->title = get_new_id($node->type);
+    }
+  }
+  if($node->type == 'tarjeta_de_produccion') {
+    if ($node->is_new) {
+      $node->title = get_new_id($node->type);
+    }
+
+    $cont = 0;
     
     $v = taxonomy_vocabulary_machine_name_load('tallas');
     $terms = taxonomy_get_tree($v->vid);
     foreach ($terms as $term) {
       $term_tid = 'tt_' . $term->tid;
-      if(isset($node->$term_tid)){
-        if($data != '')
-          $data .= '_';
-        $data .= $term->tid . ',' . $node->$term_tid;
+      if(isset($node->$term_tid)) {
+        if(intval($node->$term_tid) > 0) {
+
+          //$field_collection_item->save();
+          if($cont > 0) {
+            $field_collection_item = entity_create('field_collection_item', array('field_name' => 'field_fc_talla_y_cantidad'));
+            $field_collection_item->setHostEntity('node', $node);
+
+            $node->field_fc_talla_y_cantidad[LANGUAGE_NONE][$cont] = $node->field_fc_talla_y_cantidad[LANGUAGE_NONE][0];
+            $node->field_fc_talla_y_cantidad[LANGUAGE_NONE][$cont]['entity'] = $field_collection_item;
+          }
+          $node->field_fc_talla_y_cantidad[LANGUAGE_NONE][$cont]['entity']->field_cantidad[LANGUAGE_NONE][0]['value'] = $node->$term_tid;
+          $node->field_fc_talla_y_cantidad[LANGUAGE_NONE][$cont]['entity']->field_talla[LANGUAGE_NONE][0]['tid'] = $term->tid;
+
+          $cont++;
+        }
       }      
-    }    
-    $node->field_talla_y_cantidad[LANGUAGE_NONE][0]['value'] = $data;
-    
+    }
   }
+}
+
+// Obtiene el nuevo id para Corte/TProduccion
+function get_new_id($tipo) {
+  $query = new EntityFieldQuery();
+
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', $tipo)
+    ->propertyCondition('status', 1)
+    ->count()
+    ->execute();
+
+  $new_id = intval($result) + 1;
+
+  return ($tipo == 'corte') ? 'C-' . $new_id : 'T-' . $new_id;
 }
 
 function get_t_producciones_del_corte($nid){
@@ -110,24 +170,23 @@ function get_t_producciones_del_corte($nid){
     $resp = new stdClass();
     $resp->tallas = array();
     $resp->tarjetas = array();
-    foreach($nodes as $node){
+    /*foreach ($nodes as $node) {
       $resp->tarjetas[] = $node;
       $wrapper = entity_metadata_wrapper('node', $node);
-      $color = $wrapper->field_color->value();
       $detalle = $wrapper->field_talla_y_cantidad->value();
-            
+
       $tallas = explode('_', $detalle);
-      foreach($tallas as $talla){
+      foreach ($tallas as $talla) {
         $tem = explode(',', $talla);
-        
-        if(!isset($resp->tallas[$tem[0]])){
+
+        if (!isset($resp->tallas[$tem[0]])) {
           $resp->tallas[$tem[0]] = 0;
         }
-        
+
         $resp->tallas[$tem[0]] = $resp->tallas[$tem[0]] + $tem[1];
-      }      
+      }
     }
-    
+    */
     return $resp;
   }
   
@@ -161,7 +220,7 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
     
     $faltan = $resp->tt[$i]->subtotal;
     if($tarjetas != NULL){
-      $faltan = $resp->tt[$i]->subtotal - $tarjetas->tallas[$term->tid];
+      //$faltan = $resp->tt[$i]->subtotal - $tarjetas->tallas[$term->tid];
     }
     
     $resp->html_tt .= '<tr><td>' . $resp->tt[$i]->talla .'</td><td>' . $resp->tt[$i]->subtotal . '</td><td>' .
@@ -193,7 +252,7 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
 function getActionsLinks($node){
   $resp = new stdClass();
   $resp->nueva_tarjeta_produccion =
-    '<p><a href="t-produccion/' . $node->nid . '" class="btn btn-success" target="_blank"> </a> Crear Tarjeta de Producción</p>' .
+    '<p><a href="node/add/tarjeta-de-produccion?corte=' . $node->nid . '" class="btn btn-success" target="_blank"> </a> Crear Tarjeta de Producción</p>' .
     '<p><a href="print/imprimir-corte/' . $node->nid . '" class="btn btn-info" target="_blank"> </a> Imprimir Corte</p>' .
     '<p><a href="node/' . $node->nid . '/edit?destination=inicio?nid=' . $node->nid . '" class="btn btn-danger"> </a> Editar Corte</p>';
   return $resp;

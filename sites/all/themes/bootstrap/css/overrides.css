@@ -43,6 +43,66 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
   margin-right: 20px;
   cursor: pointer;
 }
+#tarjeta-de-produccion-node-form .field-name-field-nodo-corte,
+#tarjeta-de-produccion-node-form .field-name-field-fc-talla-y-cantidad,
+#tarjeta-de-produccion-node-form .form-item-title,
+.tabledrag-toggle-weight-wrapper,
+.node-form.node-corte-form .form-item-title,
 .page-t-produccion .node-tarjeta_de_produccion-form .form-item-title {
   display: none;
+}
+#edit-field-modelo,
+#edit-field-tela {
+  display: inline-block;
+  width: 45%;
+  vertical-align: text-top;
+  margin-right: 20px;
+}
+#edit-field-ancho,
+#edit-field-longitud,
+#edit-field-aprovechamiento,
+.field-multiple-table .field-name-field-talla,
+.field-multiple-table .field-name-field-cantidad {
+  display: inline-block;
+  width: 30%;
+  vertical-align: text-top;
+  margin-right: 20px;
+}
+
+.field-multiple-table button.btn-danger{
+  float: right;
+  margin-top: 20px;
+}
+.field-multiple-table .form-control,
+#edit-field-modelo .form-control,
+#edit-field-tela .form-control{
+  width: 100% !important;
+}
+
+.table-responsive {
+  margin-bottom: 40px;
+}
+td.views-field-field-observaciones {
+  max-width: 300px;
+}
+
+#tarjeta-de-produccion-node-form .field_talla_wrapper {
+  width: 30%;
+  display: inline-block;
+  margin-right: 10px;
+}
+.group-sam .form-wrapper.form-group{
+  width: 18%;
+  display: inline-block;
+  margin-right: 10px;
+}
+.msg-text{
+  position: fixed;
+  border: 3px solid #d9534f;
+  border-radius: 10px;
+  top: 2%;
+  right: 2%;
+  padding: 10px;
+  background-color: #FFFFFF;
+  max-width: 300px;
 }
