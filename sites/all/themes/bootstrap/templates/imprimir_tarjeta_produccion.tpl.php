@@ -17,10 +17,10 @@
           <td><b>MODELO: </b></td>
           <td><?php print $output->modelo_nombre;?></td>  
         </tr>
-        <tr>
+        <!--<tr>
           <td><b>COLOR: </b></td>
-          <td><?php print $output->color_nombre;?></td>  
-        </tr>
+          <td><?php //print $output->color_nombre;?></td>
+        </tr>-->
         <tr>
           <td><b>TIPO DE TELA: </b></td>
           <td><?php print $output->tela_nombre;?></td>  
@@ -35,7 +35,7 @@
       <table class="table table-bordered">
         <tr>
           <td><b>Nº TARJETA: </b></td>     
-          <td><?php print $output->nid;?></td>
+          <td><?php print $output->title;?></td>
         </tr>
         <tr>
           <td><b>CORTADOR: </b></td>

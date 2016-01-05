@@ -50,7 +50,8 @@ $a = 0;
       foreach ($info->tt as $tem_tt) {
         $faltan = $tem_tt->subtotal;
         if ($tarjetas != NULL) {
-          $faltan = $tem_tt->subtotal - $tarjetas->tallas[$tem_tt->talla_tid];
+          $term_id = $tem_tt->talla_tid;
+          $faltan = $tem_tt->subtotal - $tarjetas->tallas->$term_id;
         }
 
         $disabled = FALSE;
@@ -168,25 +169,22 @@ function get_t_producciones_del_corte($nid){
     $nodes = node_load_multiple($nids);
     
     $resp = new stdClass();
-    $resp->tallas = array();
+    $resp->tallas = new stdClass();
+
     $resp->tarjetas = array();
-    /*foreach ($nodes as $node) {
+    foreach ($nodes as $node) {
       $resp->tarjetas[] = $node;
-      $wrapper = entity_metadata_wrapper('node', $node);
-      $detalle = $wrapper->field_talla_y_cantidad->value();
 
-      $tallas = explode('_', $detalle);
-      foreach ($tallas as $talla) {
-        $tem = explode(',', $talla);
-
-        if (!isset($resp->tallas[$tem[0]])) {
-          $resp->tallas[$tem[0]] = 0;
+      foreach($node->field_fc_talla_y_cantidad[LANGUAGE_NONE] as $temp) {
+        $fc = field_collection_item_load($temp['value']);
+        $tid = $fc->field_talla[LANGUAGE_NONE][0]['tid'];
+        if (!isset($resp->tallas->$tid)) {
+          $resp->tallas->$tid = 0;
         }
-
-        $resp->tallas[$tem[0]] = $resp->tallas[$tem[0]] + $tem[1];
+        $resp->tallas->$tid = $resp->tallas->$tid + $fc->field_cantidad[LANGUAGE_NONE][0]['value'];
       }
     }
-    */
+
     return $resp;
   }
   
@@ -220,7 +218,8 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
     
     $faltan = $resp->tt[$i]->subtotal;
     if($tarjetas != NULL){
-      //$faltan = $resp->tt[$i]->subtotal - $tarjetas->tallas[$term->tid];
+      $term_id = $term->tid;
+      $faltan = $resp->tt[$i]->subtotal - $tarjetas->tallas->$term_id;
     }
     
     $resp->html_tt .= '<tr><td>' . $resp->tt[$i]->talla .'</td><td>' . $resp->tt[$i]->subtotal . '</td><td>' .
@@ -235,7 +234,7 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
   if($tarjetas != NULL){
     $resp->html_tt .= '<span class="col-sm-12"><div style="font-size: 11px;"><b>Tarjetas de Producción: </b></div>';
     foreach ($tarjetas->tarjetas as $t ){
-      $resp->html_tt .= '<a target="_blank" href="imprimir-tarjeta-produccion/' . $t->nid . '">' . $t->nid . '</a>, ';
+      $resp->html_tt .= '<a target="_blank" href="imprimir-tarjeta-produccion/' . $t->nid . '">' . $t->title . '</a>, ';
     }
     $resp->html_tt .= '</span>';
   }
@@ -329,9 +328,15 @@ function _custom_functions_imprimir_diario($fecha){
    $wrapper = entity_metadata_wrapper('node', $node);
    $node->cliente_nombre = $wrapper->field_cliente->name->value();
    $node->modelo_nombre = $wrapper->field_nodo_corte->field_modelo->name->value();
-   $node->color_nombre = $wrapper->field_color->name->value();
-   $node->tela_nombre = $wrapper->field_nodo_corte->field_tela->name->value();
+   //$node->color_nombre = $wrapper->field_color->name->value();
+
    $node->corte_fecha = date('Y-m-d', $wrapper->field_nodo_corte->created->value());
+
+   $node->tela = $wrapper->field_nodo_corte->field_tela->value();
+   $node->tela_nombre = '';
+   foreach ($node->tela as $tela) {
+     $node->tela_nombre .= $tela->name . ', ';
+   }
    
    $corte = node_load($node->field_nodo_corte[LANGUAGE_NONE][0]['nid']);
    $user_corte = user_load($corte->uid);
@@ -340,31 +345,27 @@ function _custom_functions_imprimir_diario($fecha){
    }else{
      $node->user_corte_nombre = $corte->uid;
    }
-   
-   $tc = $wrapper->field_talla_y_cantidad->value();
-   
-   $tem1 = explode('_', $tc);
-   
+
    $tallas_cantidades = array();
    $cantidad_total = 0;
    $i = 0;
-   foreach($tem1 as $tc){
-     $tem2 = explode(',', $tc);
-     $term = taxonomy_term_load($tem2[0]);
-     
+   foreach($node->field_fc_talla_y_cantidad[LANGUAGE_NONE] as $temp) {
+     $fc = field_collection_item_load($temp['value']);
+     $tid = $fc->field_talla[LANGUAGE_NONE][0]['tid'];
+
+     $term = taxonomy_term_load($tid);
+
      $tallas_cantidades[$i] = new stdClass();
      $tallas_cantidades[$i]->talla = $term->name;
-     $tallas_cantidades[$i++]->cantidad = $tem2[1];
-     
-     $cantidad_total = $cantidad_total + $tem2[1];
+     $tallas_cantidades[$i++]->cantidad = $fc->field_cantidad[LANGUAGE_NONE][0]['value'];
+
+     $cantidad_total = $cantidad_total + $fc->field_cantidad[LANGUAGE_NONE][0]['value'];
+
    }
-   
+
    $node->tallas_cantidades = $tallas_cantidades;
    $node->cantidad_total = $cantidad_total;
-   
-   
-   
-   $a = 0;
+
    
    return theme('imprimir_tarjeta_produccion', array('output' => $node));
  }
