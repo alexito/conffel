@@ -46,11 +46,13 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
 #tarjeta-de-produccion-node-form .field-name-field-nodo-corte,
 #tarjeta-de-produccion-node-form .field-name-field-fc-talla-y-cantidad,
 #tarjeta-de-produccion-node-form .form-item-title,
+#diario-node-form .form-item-title,
 .tabledrag-toggle-weight-wrapper,
 .node-form.node-corte-form .form-item-title,
 .page-t-produccion .node-tarjeta_de_produccion-form .form-item-title {
   display: none;
 }
+
 #edit-field-modelo,
 #edit-field-tela {
   display: inline-block;
@@ -105,4 +107,23 @@ td.views-field-field-observaciones {
   padding: 10px;
   background-color: #FFFFFF;
   max-width: 300px;
+}
+td .field-name-field-operador,
+td .field-name-field-real-horas {
+  display: inline-block;
+  width: 35%;
+  vertical-align: text-top;
+  margin-right: 20px;
+}
+td .field-name-field-tarjeta,
+td .field-name-field-uds,
+td .field-name-field-fallas {
+  display: inline-block;
+  width: 25%;
+  vertical-align: text-top;
+  margin-right: 20px;
+}
+.field-multiple-drag,
+a.tabledrag-handle{
+  display: none;
 }
