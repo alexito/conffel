@@ -73,7 +73,7 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
 
 .field-multiple-table button.btn-danger{
   float: right;
-  margin-top: 20px;
+  margin-top: 25px;
 }
 .field-multiple-table .form-control,
 #edit-field-modelo .form-control,
@@ -126,4 +126,17 @@ td .field-name-field-fallas {
 .field-multiple-drag,
 a.tabledrag-handle{
   display: none;
+}
+.form-group:not(.form-item-field-cliente-und, .form-item) {
+  margin-bottom: 1px !important;
+}
+.field-name-field-operadores,
+.field-name-field-tarjetas{
+  display: inline-block;
+  width: 85%;
+}
+.field-type-field-collection.field-name-field-operadores,
+.field-type-field-collection.field-name-field-tarjetas {
+  border: 1px dotted #c1c1c1;
+  padding: 5px;
 }

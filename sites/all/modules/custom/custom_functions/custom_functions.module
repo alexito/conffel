@@ -273,8 +273,9 @@ function softTrim($text, $count, $wrapText='...'){
  * Implement hook_menu
  */
  function custom_functions_menu(){
-   $items['guardar-diario'] = array(
-    'page callback' => '_custom_functions_guardar_diario',
+   $items['get-tarjeta-info/%node'] = array(
+    'page callback' => '_custom_functions_get_tarjeta_info',
+    'page arguments' => array(1),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
@@ -369,160 +370,9 @@ function _custom_functions_imprimir_diario($fecha){
    
    return theme('imprimir_tarjeta_produccion', array('output' => $node));
  }
- 
- function _custom_functions_guardar_diario() {
-   if(isset($_POST['info'])){
-     $info = $_POST['info'];
-     
-     foreach($info as $modulo){
-        $mod_id = $modulo['mod_id'];
-        $tar_ids = explode(',', $modulo['tarjetas']);
-        $uds = explode(',', $modulo['uds']);
-        $tarjetas = [];
-        
-        if(count($tar_ids) > 0 && $tar_ids[0] != '' ){
-          $modulo['tarjetas'] = $tar_ids;
-          $modulo['uds'] = $uds;
-          $tarjetas = node_load_multiple($tar_ids, array('type' => 'tarjeta_de_produccion'));
-        }
-        if(count($tarjetas) > 0){
-          crear_contenido($tarjetas, $modulo);
-        }
-     }     
-   }
-   
-  $data = array("ok");
-  return drupal_json_output($data);
-}
 
-function crear_contenido($tarjetas, $modulo){
-  global $user;
-  module_load_include('inc', 'entity', 'includes/entity.controller');
-
-  $node = new stdClass();
-  $node->title = "Diario " . date('Y-m-d') . ' 00:00:00';
-  $node->type = "diario";
-  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
-  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
-  $node->uid = $user->uid; 
-  $node->status = 1; //(1 or 0): published or not
-  $node->promote = 0; //(1 or 0): promoted to front page
-  $node->comment = 0; // 0 = comments disabled, 1 = read only, 2 = read/write
-  
-  $node->field_fecha_diario[LANGUAGE_NONE][0]['value'] = date('Y-m-d') . ' 00:00:00';
-  $node->field_fecha_diario[LANGUAGE_NONE][0]['value2'] = date('Y-m-d') . ' 00:00:00';
-  $node->field_fecha_diario[LANGUAGE_NONE][0]['offset'] = '-18000';
-  $node->field_fecha_diario[LANGUAGE_NONE][0]['offset2'] = '-18000';
-  $node->field_fecha_diario[LANGUAGE_NONE][0]['show_todate'] = true;
-  $node->field_fecha_diario[LANGUAGE_NONE][0]['timezone'] = 'America/Guayaquil';
-  $node->field_fecha_diario[LANGUAGE_NONE][0]['timezone_db'] = 'America/Guayaquil';
-  $node->field_fecha_diario[LANGUAGE_NONE][0]['date_type'] = 'detetime';
-  $node->field_modulo[LANGUAGE_NONE][0]['tid'] = $modulo['mod_id'];
-    
-  $term = taxonomy_term_load($modulo['mod_id']);
-  
-  $tarj_finales = array();
-  $emp_finales = array();
-  
-  $horas_total = 0;  
-  $min_prod_total = 0;
-  $uds_total = 0;
-    
-  for($i = 0; $i < count($modulo['tarjetas']); $i++){    
-
-    $tar_id = trim($modulo['tarjetas'][$i]);
-
-    //Obtiene el SAM asignado para cada grupo
-    if($term->field_grupo[LANGUAGE_NONE][0]['value'] == '1'){
-      $sam = $tarjetas[$modulo['tarjetas'][$i]]->field_confeccion[LANGUAGE_NONE][0]['value'];
-    }else if($term->field_grupo[LANGUAGE_NONE][0]['value'] == '1'){
-      $sam = $tarjetas[$modulo['tarjetas'][$i]]->field_sam_control_de_calidad[LANGUAGE_NONE][0]['value'];
-    }else if($term->field_grupo[LANGUAGE_NONE][0]['value'] == '1'){
-      $sam = $tarjetas[$modulo['tarjetas'][$i]]->field_terminado[LANGUAGE_NONE][0]['value'];
-    }else if($term->field_grupo[LANGUAGE_NONE][0]['value'] == '1'){
-      $sam = $tarjetas[$modulo['tarjetas'][$i]]->field_sam_estampado[LANGUAGE_NONE][0]['value'];
-    }else if($term->field_grupo[LANGUAGE_NONE][0]['value'] == '1'){
-      $sam = $tarjetas[$modulo['tarjetas'][$i]]->field_sam_bordado[LANGUAGE_NONE][0]['value'];
-    }
-
-    $uds = trim($modulo['uds'][$i]);
-    $min_prod = $sam * $uds;
-
-    $values = array(
-      'field_name' => 'field_tarjeta',
-      'field_det_tarjeta' => array(
-        LANGUAGE_NONE => array(array('nid' => $tar_id)),
-      ),
-      'field_det_uds' => array(
-        LANGUAGE_NONE => array(array('value' => $uds)),
-      ),
-      'field_det_sam' => array(
-        LANGUAGE_NONE => array(array('value' => $sam)),
-      ),
-      'field_det_min_prod' => array(
-        LANGUAGE_NONE => array(array('value' => $min_prod)),
-      )
-    );
-    $entity = entity_create('field_collection_item', $values);
-    $entity->setHostEntity('node', $node);
-    $entity->save();
-
-    $min_prod_total = $min_prod_total + $min_prod;
-    $uds_total = $uds_total + $uds;
-  }
-  
-  
-  $node->field_min_prod_total[LANGUAGE_NONE][0]['value'] = $min_prod_total;
-  $node->field_uds_total[LANGUAGE_NONE][0]['value'] = $uds_total;
-  
-  //Obtiene el total de las horas
-  foreach($modulo['empleados'] as $emp){
-    $horas_total = $horas_total + intval($emp['rh']) + 0;
-  }
-  
-  $node->field_horas_total[LANGUAGE_NONE][0]['value'] = $horas_total;
-  
-  $tem1 = $horas_total * 60;
-  $variable = ($min_prod_total / $tem1);
-  
-  $node->field_variable[LANGUAGE_NONE][0]['value'] = $variable;
-  
-  $us_total = 0;
-  
-  $i = 0;  
-  foreach($modulo['empleados'] as $emp){    
-    $tem2 = intval($emp['rh']) * 60;
-    $vxm = floatval($modulo['vxm']);
-    $us = $variable * $vxm * floatval($tem2);
-        
-    $values = array(
-      'field_name' => 'field_detalle',
-      'field_empleado' => array(
-        LANGUAGE_NONE => array(array('nid' => $emp['emp_id'])),
-      ),
-      'field_v_min' => array(
-        LANGUAGE_NONE => array(array('value' => $modulo['vxm'])),
-      ),
-      'field_horas' => array(
-        LANGUAGE_NONE => array(array('value' => $emp['rh'])),
-      ),
-      'field_us_subtotal' => array(
-        LANGUAGE_NONE => array(array('value' => $us)),
-      )
-    );
-    $entity = entity_create('field_collection_item', $values);
-    $entity->setHostEntity('node', $node);
-    $entity->save();
-    
-    $us_total = $us_total + $us;
-    
-    $i++;
-  }
-  
-  $node->field_us_total[LANGUAGE_NONE][0]['value'] = $us_total;
-  
-  $node = node_submit($node); // Prepare node for saving
-  node_save($node);
-  
-  return $node->nid;
+function _custom_functions_get_tarjeta_info($node) {
+  $data = new stdClass();
+  $data->info = $node;
+  return drupal_json_output($data);;
 }

@@ -2,6 +2,21 @@
   Drupal.behaviors.custom_functions = {
     attach: function (context, settings) {
       $(window).load(function () {
+        //Actualiza textos de los botones
+        if (!$('body').hasClass('page-inicio')) {
+          var cat = ['crt', 'cnf', 'prp', 'trm', 'cnt', 'mpq'];
+          setInterval(function(){
+            for (var i = 0; i < cat.length; i++) {
+              $('.field-type-field-collection.field-name-field-' + cat[i] + '-modulos > div > div > div > button.btn-info:not(.procesado)').removeClass('btn-info').addClass('btn-success procesado').text('+ Módulo');
+              $('.field-type-field-collection.field-name-field-operadores .btn-info:not(.procesado)').addClass('procesado').text('+ Operador');
+              $('.field-type-field-collection.field-name-field-tarjetas .btn-info:not(.procesado)').addClass('procesado').text('+ Tarjeta');
+
+              $('.btn-danger:not(.procesado)').addClass('procesado').text('X');
+            }
+
+          }, 500);
+        }
+
 
         //Inicializa el Calendario
         var d = new Date();
