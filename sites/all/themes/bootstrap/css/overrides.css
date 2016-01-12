@@ -108,6 +108,9 @@ td.views-field-field-observaciones {
   background-color: #FFFFFF;
   max-width: 300px;
 }
+.panel-body .field-type-number-decimal {
+  max-width: 300px;
+}
 td .field-name-field-operador,
 td .field-name-field-real-horas {
   display: inline-block;

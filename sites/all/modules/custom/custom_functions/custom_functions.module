@@ -151,7 +151,7 @@ function get_new_id($tipo) {
 
   $new_id = intval($result) + 1;
 
-  return ($tipo == 'corte') ? 'C-' . $new_id : 'T-' . $new_id;
+  return ($tipo == 'corte') ? 'C-' . $new_id : ($tipo == 'diario') ? 'D-' : 'T-' . $new_id;
 }
 
 function get_t_producciones_del_corte($nid){
