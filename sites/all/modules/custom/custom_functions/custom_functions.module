@@ -1,24 +1,40 @@
 <?php
 
-function get_form_tarjeta_de_produccion() {
-  global $user;
-  module_load_include('inc', 'node', 'node.pages'); 
-  $node_form = new stdClass;
-  $node_form->type = 'tarjeta_de_produccion';
-  $node_form->language = LANGUAGE_NONE;
-  $node_form->uid = $user->uid;
-  $node_form->status = 1;
-  $node_form->revision = FALSE;
-  $node_form->comment = 0;
-  $node_form->promote = 0;
-  $node_form->sticky = 0;
-  $node_form->log = NULL;
-  $form = drupal_get_form('tarjeta_de_produccion_node_form', $node_form);
-  return drupal_render($form);
+
+/**
+ * Implement hook_menu
+ */
+function custom_functions_menu(){
+  $items['get-tarjeta-info/%node/%'] = array(
+    'page callback' => '_custom_functions_get_tarjeta_info',
+    'page arguments' => array(1, 2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['imprimir-corte/%node'] = array(
+    'page callback' => '_custom_functions_imprimir_corte',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['imprimir-tarjeta-produccion/%node'] = array(
+    'page callback' => '_custom_functions_imprimir_tarjeta_produccion',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
 }
 
+/**
+ * Implements hook_form_alter().
+ */
 function custom_functions_form_alter(&$form, &$form_state, $form_id) {
-$a = 0;
+
+  if ($form_id == 'diario_node_form') {
+    $form['#validate'][] = '_custom_functions_diario_validation';
+  }
   if ($form_id != 'views_exposed_form' && isset($form['nid']) && $form['nid']['#value'] == null) {
     $form['title']['#default_value'] = 'nulo';
   }
@@ -77,22 +93,49 @@ $a = 0;
           '#weight' => 50,
         );
       }
-
-
     }
 
     $form['some_text'] = array(
       '#markup' => $view_rendered
     );
 
-
-        
     $form['field_color']['#access'] = FALSE;
     $form['field_talla_y_cantidad']['#access'] = FALSE;
-    //$form['field_nodo_corte']['#access'] = FALSE;
     
     $form['actions']['submit']['#submit'][] = 'custom_submit';
   }
+}
+
+function _custom_functions_diario_validation($form, &$form_state) {
+  $a = 0;
+
+  // CORTE
+  foreach ($form_state['values']['field_crt_modulos'][LANGUAGE_NONE] as $modulo) {
+
+    if (is_array($modulo)) {
+      foreach ($modulo['field_tarjetas'][LANGUAGE_NONE] as $tarjeta) {
+        if (is_array($tarjeta)) {
+          if ($tarjeta['field_tarjeta'][LANGUAGE_NONE][0]['nid'] != NULL) {
+            $node = node_load($tarjeta['field_tarjeta'][LANGUAGE_NONE][0]['nid']);
+            $data = _custom_functions_get_tarjeta_info($node, 'corte', FALSE);
+            $a = 0;
+            $uds = intval($tarjeta['field_uds'][LANGUAGE_NONE][0]['value']);
+            $fallas = intval($tarjeta['field_fallas'][LANGUAGE_NONE][0]['value']);
+            if (($uds + $fallas) > intval($data->restantes)) {
+              form_set_error('field_crt_modulos', 'La suma total de UDS + Fallas no debe ser mayor al Máximo');
+            }
+            if (($uds + $fallas) == intval($data->restantes)) {
+              $node->field_completado_corte[LANGUAGE_NONE][0]['value'] = TRUE;
+              node_save($node);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  form_set_error('title', 'Title cannot be "test"');
+
 }
 
 function custom_submit($form, &$form_state){
@@ -136,6 +179,11 @@ function custom_functions_node_presave($node) {
       }      
     }
   }
+  if($node->type == 'diario') {
+    if ($node->is_new) {
+      $node->title = get_new_id($node->type);
+    }
+  }
 }
 
 // Obtiene el nuevo id para Corte/TProduccion
@@ -151,7 +199,7 @@ function get_new_id($tipo) {
 
   $new_id = intval($result) + 1;
 
-  return ($tipo == 'corte') ? 'C-' . $new_id : ($tipo == 'diario') ? 'D-' : 'T-' . $new_id;
+  return ($tipo == 'corte') ? 'C-' . $new_id : ($tipo == 'diario') ? 'D-' . $new_id : 'T-' . $new_id;
 }
 
 function get_t_producciones_del_corte($nid){
@@ -238,8 +286,12 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
     }
     $resp->html_tt .= '</span>';
   }
-  
+
   $resp->html_actions = getActionsLinks($node);
+  if ($resp->suma_faltan == 0) {
+    $resp->html_actions = getActionsLinks($node, FALSE);
+  }
+
   
   $resp->user = user_load($node->uid);
   $resp->node = $node;
@@ -248,78 +300,20 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
   return $resp;
 }
 
-function getActionsLinks($node){
+function getActionsLinks($node, $tarjeta = TRUE){
   $resp = new stdClass();
-  $resp->nueva_tarjeta_produccion =
-    '<p><a href="node/add/tarjeta-de-produccion?corte=' . $node->nid . '" class="btn btn-success" target="_blank"> </a> Crear Tarjeta de Producción</p>' .
+  $resp->nueva_tarjeta_produccion = '';
+  if ($tarjeta) {
+    $resp->nueva_tarjeta_produccion .=
+      '<p><a href="node/add/tarjeta-de-produccion?corte=' . $node->nid . '" class="btn btn-success" target="_blank"> </a> Crear Tarjeta de Producción</p>';
+  }
+
+  $resp->nueva_tarjeta_produccion .=
     '<p><a href="print/imprimir-corte/' . $node->nid . '" class="btn btn-info" target="_blank"> </a> Imprimir Corte</p>' .
     '<p><a href="node/' . $node->nid . '/edit?destination=inicio?nid=' . $node->nid . '" class="btn btn-danger"> </a> Editar Corte</p>';
   return $resp;
 }
 
-
-
-function softTrim($text, $count, $wrapText='...'){
-    if(strlen($text)>$count){
-        preg_match('/^.{0,' . $count . '}(?:.*?)\b/siu', $text, $matches);
-        $text = $matches[0];
-    }else{
-        $wrapText = '';
-    }
-    return $text . $wrapText;
-}
-
-/**
- * Implement hook_menu
- */
- function custom_functions_menu(){
-   $items['get-tarjeta-info/%node'] = array(
-    'page callback' => '_custom_functions_get_tarjeta_info',
-    'page arguments' => array(1),
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['imprimir-corte/%node'] = array(
-    'page callback' => '_custom_functions_imprimir_corte',
-    'page arguments' => array(1),
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['imprimir-tarjeta-produccion/%node'] = array(
-    'page callback' => '_custom_functions_imprimir_tarjeta_produccion',
-    'page arguments' => array(1),
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['imprimir-diario/%'] = array(
-    'page callback' => '_custom_functions_imprimir_diario',
-    'page arguments' => array(1),
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
-
-  return $items;
- }
- 
-function _custom_functions_imprimir_diario($fecha){
-  $output = new stdClass();
-  $output->fecha = $fecha;
-  $query = new EntityFieldQuery();
-  $result = $query
-    ->entityCondition('entity_type', 'node')
-    ->entityCondition('bundle', 'diario')
-    ->propertyCondition('status', 1)
-    ->fieldCondition('field_fecha_diario', 'value', $fecha . '% %00', 'like')
-    ->fieldOrderBy('field_modulo', 'tid', 'asc')
-    ->execute();
-  if (isset($result['node'])) {
-    $nids = array_keys($result['node']);
-    $output->nodes = node_load_multiple($nids);    
-  }
-    
-   return theme('imprimir_diario', array('output' => $output));
- }
- 
  function _custom_functions_imprimir_corte($node){   
    $output = get_corte_values(null, null, $node->nid, null);
    return theme('imprimir_corte', array('output' => $output));
@@ -329,7 +323,6 @@ function _custom_functions_imprimir_diario($fecha){
    $wrapper = entity_metadata_wrapper('node', $node);
    $node->cliente_nombre = $wrapper->field_cliente->name->value();
    $node->modelo_nombre = $wrapper->field_nodo_corte->field_modelo->name->value();
-   //$node->color_nombre = $wrapper->field_color->name->value();
 
    $node->corte_fecha = date('Y-m-d', $wrapper->field_nodo_corte->created->value());
 
@@ -371,8 +364,63 @@ function _custom_functions_imprimir_diario($fecha){
    return theme('imprimir_tarjeta_produccion', array('output' => $node));
  }
 
-function _custom_functions_get_tarjeta_info($node) {
+function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
   $data = new stdClass();
+  $wrapper = entity_metadata_wrapper('node', $node);
+
+  $data->total_prendas = $wrapper->field_total_prendas->value();
+
+  $data->sam_corte = $wrapper->field_sam_corte->value();
+  $data->sam_confeccion = $wrapper->field_sam_confeccion->value();
+  $data->sam_preparacion = $wrapper->field_sam_preparacion->value();
+  $data->sam_terminado = $wrapper->field_sam_terminado->value();
+  $data->sam_control_de_calidad = $wrapper->field_sam_control_de_calidad->value();
+  $data->sam_empaque = $wrapper->field_sam_empaque->value();
+
+  $data->completado_corte = $wrapper->field_completado_corte->value();
+  $data->completado_confeccion = $wrapper->field_completado_confeccion->value();
+  $data->completado_preparacion = $wrapper->field_completado_preparacion->value();
+  $data->completado_terminado = $wrapper->field_completado_terminado->value();
+  $data->completado_control_de_calidad = $wrapper->field_completado_control_calidad->value();
+  $data->completado_empaque = $wrapper->field_completado_empaque->value();
+
+  $query = new EntityFieldQuery();
+  $results = $query
+    ->entityCondition('entity_type', 'field_collection_item')
+    ->fieldCondition('field_tarjeta', 'nid', $node->nid, '=')
+    ->fieldCondition('field_categoria', 'value', $grupo, '=')
+    ->execute();
+
+  $total_hechas = 0;
+
+  if ($results) {
+    $fci = $results['field_collection_item'];
+
+    foreach($fci as $key => $item) {
+      $fc_tarjeta = field_collection_item_load($key);
+
+      $total_hechas += intval($fc_tarjeta->field_uds[LANGUAGE_NONE][0]['value']);
+      $total_hechas += intval($fc_tarjeta->field_fallas[LANGUAGE_NONE][0]['value']);
+
+      $tem = field_collection_item_get_host_entity($fc_tarjeta);
+      $fc_modulo = field_collection_item_load($tem->item_id->value());
+      $tem = field_collection_item_get_host_entity($fc_modulo);
+      $diario = node_load($tem->nid->value());
+    }
+  }
+
+  $data->total_hechas = $total_hechas;
+  $data->restantes = $data->total_prendas - $data->total_hechas;
+
   $data->info = $node;
-  return drupal_json_output($data);;
+
+  if ($ajax) {
+    return drupal_json_output($data);
+  }
+  else {
+    return $data;
+  }
+
 }
+
+

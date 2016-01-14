@@ -87,6 +87,9 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
 td.views-field-field-observaciones {
   max-width: 300px;
 }
+.form-item-field-cliente-und > .input-group {
+  max-width: 400px;
+}
 
 #tarjeta-de-produccion-node-form .field_talla_wrapper {
   width: 30%;
@@ -116,7 +119,9 @@ td .field-name-field-real-horas {
   display: inline-block;
   width: 35%;
   vertical-align: text-top;
-  margin-right: 20px;
+  margin-right: 0;
+  margin-bottom: 0;
+  height: 65px;
 }
 td .field-name-field-tarjeta,
 td .field-name-field-uds,
@@ -124,11 +129,19 @@ td .field-name-field-fallas {
   display: inline-block;
   width: 25%;
   vertical-align: text-top;
-  margin-right: 20px;
+  margin-right: 0;
+  margin-bottom: 0;
+  height: 65px;
+}
+.table>tbody>tr>td{
+  padding: 0 8px !important;
 }
 .field-multiple-drag,
 a.tabledrag-handle{
   display: none;
+}
+.field-name-field-fallas > div {
+  display: inline-block;
 }
 .form-group:not(.form-item-field-cliente-und, .form-item) {
   margin-bottom: 1px !important;
@@ -142,4 +155,7 @@ a.tabledrag-handle{
 .field-type-field-collection.field-name-field-tarjetas {
   border: 1px dotted #c1c1c1;
   padding: 5px;
+}
+.panel-body > div > div > div > table.field-multiple-table > tbody > tr{
+  border-bottom: 2px dashed;
 }

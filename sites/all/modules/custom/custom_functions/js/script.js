@@ -4,13 +4,13 @@
       $(window).load(function () {
 
         var cat = ['crt', 'cnf', 'prp', 'trm', 'cnt', 'mpq'];
+        var global_tarjetas = [];
 
         // Diario
         $('.node-diario-form .panel-body:not(.processed)').addClass('processed').each(function(){
           var panel = this;
           var valor_minuto = 0;
           var panel_parent = $(panel).parent();
-
           var grupo = getGrupo(panel_parent);
 
           // Remueve los elementos innecesarios
@@ -18,55 +18,14 @@
             if ($('.sticky-header, .field-multiple-drag', panel).length > 0) {
               $('.sticky-header', panel).remove();
               $('.field-multiple-drag', panel).remove();
+              //$('.hide', panel).removeClass('hide');
             }
           }, 500)
 
-          // Adjunta comportamiento a los campos
-          setInterval(function() {
-
-            // ---------------- TARJETA
-            $('.field-name-field-tarjeta:not(.processed)', panel).addClass('processed').each(function() {
-              var tarjeta = this;
-              $('input.form-text', tarjeta).blur(function() {
-                var nid = $(this).val().split(':');
-                nid = nid[1].split(']');
-                nid = nid[0];
-
-                $.post( "/get-tarjeta-info/" + nid, function( data ) {
-                  console.log(data)
-                  var sam = 0;
-                  if (grupo == 'corte') {
-                    sam = parseFloat(data.info.field_sam_corte.und[0].value);
-                  }
-                  if (grupo == 'confeccion') {
-                    sam = parseFloat(data.info.field_sam_confeccion.und[0].value);
-                  }
-                  if (grupo == 'preparacion') {
-                    sam = parseFloat(data.info.field_sam_preparacion.und[0].value);
-                  }
-                  if (grupo == 'terminado') {
-                    sam = parseFloat(data.info.field_sam_terminado.und[0].value);
-                  }
-                  if (grupo == 'control-de-calidad') {
-                    sam = parseFloat(data.info.field_sam_control_de_calidad.und[0].value);
-                  }
-                  if (grupo == 'empaque') {
-                    sam = parseFloat(data.info.field_sam_empaque.und[0].value);
-                  }
-
-                  $(tarjeta).closest('td').find('.field-name-field-sam input.form-text').val(sam);
-
-                  calcularPanel(panel, valor_minuto);
-                });
-              });
-            });
-
-
-          }, 500);
 
           // Ejecuta recalculacion despues de algun cambio en el valor minuto
           var input_vmin = $('> .field-type-number-decimal input', panel);
-
+          valor_minuto = $('> .field-type-number-decimal input', panel).val();
           setAsDecimal(input_vmin);
 
           $(input_vmin).blur(function() {
@@ -90,9 +49,106 @@
             calcularPanel(panel, valor_minuto);
           });
 
+          // Adjunta comportamiento a los campos
+          setInterval(function() {
+
+            // ---------------- TARJETA
+            $('.field-name-field-tarjeta:not(.processed)', panel).addClass('processed').each(function() {
+              var tarjeta = this;
+              $('input.form-text', tarjeta).blur(function() {
+                if ($(this).val() == '') {
+                  return;
+                }
+                var nid = $(this).val().split(':');
+                nid = nid[1].split(']');
+                nid = nid[0];
+
+                $.post( "/get-tarjeta-info/" + nid + "/" + grupo, function( data ) {
+                  global_tarjetas[nid] = data;
+                  setTarjeta(data, grupo, tarjeta, panel, valor_minuto);
+                });
+              });
+            });
+
+            // UDS - FALLAS - HORAS
+            $('.field-name-field-uds:not(.processed), .field-name-field-fallas:not(.processed),' +
+              ' .field-name-field-real-horas:not(.processed)', panel).addClass('processed').each(function() {
+              var tem = this;
+              var tem_input = $('input.form-text', tem);
+
+              setAsDecimal(tem_input);
+
+              $(tem_input).blur(function() {
+                if ($(this).val() == '') {
+                  $(this).val(0);
+                }
+                else {
+                  try{
+                    var temp = parseInt($(this).val());
+                    $(this).val(temp);
+                  }catch (e){
+                    $(this).val(0);
+                    return;
+                  }
+                }
+                calcularPanel(panel, valor_minuto);
+              });
+            });
+
+            // Asigna el grupo al que pertenece la tarjeta
+            $('.field-name-field-categoria:not(.processed)', panel).addClass('processed').each(function() {
+              $('input.form-text', this).val(grupo);
+            });
+
+          }, 500);
+
         });
 
+        function setTarjeta(data, grupo, tarjeta, panel, valor_minuto) {
+          console.log(data);
+          $('.custom-info-t, .custom-info-o, .custom-info-i').remove();
 
+          var sam = 0;
+          var completado = false;
+          if (grupo == 'corte') {
+            sam = parseFloat(data.sam_corte);
+            completado = data.completado_corte;
+          }
+          else if (grupo == 'confeccion') {
+            sam = parseFloat(data.sam_confeccion);
+            completado = data.completado_confeccion;
+          }
+          else if (grupo == 'preparacion') {
+            sam = parseFloat(data.sam_preparacion);
+            completado = data.completado_preparacion;
+          }
+          else if (grupo == 'terminado') {
+            sam = parseFloat(data.sam_terminado);
+            completado = data.completado_terminado;
+          }
+          else if (grupo == 'control-de-calidad') {
+            sam = parseFloat(data.sam_control_de_calidad);
+            completado = data.completado_control_de_calidad;
+          }
+          else if (grupo == 'empaque') {
+            sam = parseFloat(data.sam_empaque);
+            completado = data.completado_empaque;
+          }
+          if (completado) {
+            $(tarjeta).parent().append('<code class="custom-info-t">La tarjeta esta bloqueada para esta categoría</code>');
+            $(tarjeta).parent().find('.field-name-field-tarjeta input.form-text').val('');
+          }
+          else{
+            $(tarjeta).parent().find('.field-name-field-sam input.form-text').val(sam);
+            $(tarjeta).parent().find('.field-name-field-fallas').append('<code>Max( ' + data.restantes + ' )</code>');
+            calcularPanel(panel, valor_minuto);
+          }
+        }
+
+        function customRound(num) {
+          var resp = Math.round(num * 100000) / 100000;
+          return resp;
+        }
 
         function calcularModulo(modulo, panel, valor_minuto) {
           var limite_tarjetas = $('.field-name-field-tarjetas  > div > div > table.field-multiple-table > tbody > tr', modulo).length;
@@ -100,22 +156,34 @@
 
           var total_min_prod = 0;
           var total_uds = 0;
+
+          $('.custom-info-t', modulo).remove();
+
           $('.field-name-field-tarjetas  > div > div > table.field-multiple-table > tbody > tr', modulo).each(function (i, e) {
 
             // --------------------- Calculando Tarjetas
             var tarjeta = this;
 
             var uds = parseInt($('.field-name-field-uds input.form-text', tarjeta).val());
-            var sam = parseFloat($('.field-name-field-sam input.form-text', tarjeta).val());
+            var sam = customRound(parseFloat($('.field-name-field-sam input.form-text', tarjeta).val()));
 
-            var min_prod = parseFloat(uds * sam);
+            var min_prod = customRound(parseFloat(uds * sam));
 
             total_uds += uds;
             total_min_prod += parseFloat(min_prod);
+            total_min_prod = customRound(total_min_prod);
 
             $('.field-name-field-min-prod input.form-text', tarjeta).val(min_prod);
 
+            // Mostrar informacion de la tarjeta
+            $('> td:not(.delta-order)', tarjeta).append('<div class="custom-info-t"></div><code class="custom-info-t">SAM: ' + sam + ' | Min Prod: ' + min_prod + '</code>');
+
             if ((i + 1) === limite_tarjetas) {
+
+              $('> td:not(.delta-order)', tarjeta).append('<hr class="custom-info-t"><code class="custom-info-t"><b>Total UDS: ' + total_uds + ' | Total Min Prod: ' + total_min_prod + '</b></code>');
+
+              $('.custom-info-o', modulo).remove();
+
               // Guarda los valores totales de la tarjeta
               $('.field-name-field-total-uds input.form-text', modulo).val(total_uds);
               $('.field-name-field-total-min-prod input.form-text', modulo).val(total_min_prod);
@@ -135,26 +203,33 @@
                   $('.field-name-field-total-real-horas input.form-text', modulo).val(total_real_horas);
 
                   // Calcula la EFICIENCIA, previo a calcular el valor a pagar
-                  var eficiencia = parseFloat(total_min_prod / parseFloat(total_real_horas * 60));
-                  $('.field-name-field-eficiencia input.form-text', modulo).val(eficiencia);
+                  if (total_real_horas > 0) {
+                    var eficiencia = customRound(parseFloat(total_min_prod / customRound(parseFloat(total_real_horas * 60))));
+                    $('.field-name-field-eficiencia input.form-text', modulo).val(Math.round(eficiencia * 10000) / 100);
 
 
-                  // --------------------- Calculando el Valor a Pagar
-                  var total_us;
-                  $('.field-name-field-operadores  > div > div > table.field-multiple-table > tbody > tr', modulo).each(function (ind_, elem_) {
-                    var operador_ = this;
+                    // --------------------- Calculando el Valor a Pagar
+                    var total_us = 0;
+                    $('.field-name-field-operadores  > div > div > table.field-multiple-table > tbody > tr', modulo).each(function (ind_, elem_) {
+                      var operador_ = this;
 
-                    var real_horas_ = parseInt($('.field-name-field-real-horas input.form-text', operador_).val());
+                      var real_horas_ = parseInt($('.field-name-field-real-horas input.form-text', operador_).val());
 
-                    var us = parseFloat(eficiencia * valor_minuto * real_horas_ * 60);
+                      var us = customRound(parseFloat(eficiencia * valor_minuto * real_horas_ * 60));
 
-                    $('.field-name-field-us input.form-text', operador_).val(us);
-                    total_us += parseFloat(us);
+                      $('.field-name-field-us input.form-text', operador_).val(us);
+                      total_us += parseFloat(us);
+                      total_us = customRound(total_us);
 
-                    if ((ind_ + 1) === limite_operadores) {
-                      $('.field-name-field-total-us input.form-text', modulo).val(total_us);
-                    }
-                  });
+                      $('> td:not(.delta-order)', operador_).append('<div class="custom-info-o"></div><code class="custom-info-o">US: ' + us + '</code>');
+
+                      if ((ind_ + 1) === limite_operadores) {
+                        $('> td:not(.delta-order)', operador_).append('<hr class="custom-info-o"><code class="custom-info-o"><b>Total Horas: ' + total_real_horas + ' | Total US: ' + total_us + '</b></code>');
+                        $('.field-name-field-total-us input.form-text', modulo).val(total_us);
+                        $('> td:not(.delta-order)', modulo).append('<hr class="custom-info-o"><code class="custom-info-o"><b>Eficiencia: ' + Math.round(eficiencia * 10000) / 100 + '%</b></code>');
+                      }
+                    });
+                  }
                 }
               });
             }
@@ -173,22 +248,22 @@
         }
 
         function getGrupo(panel_parent) {
-          if ($(panel_parent).hasClass('group_corte')) {
+          if ($(panel_parent).hasClass('group-corte')) {
             return 'corte';
           }
-          if ($(panel_parent).hasClass('group_confeccion')) {
+          if ($(panel_parent).hasClass('group-confeccion')) {
             return 'confeccion';
           }
-          if ($(panel_parent).hasClass('group_preparacion')) {
+          if ($(panel_parent).hasClass('group-preparacion')) {
             return 'preparacion';
           }
-          if ($(panel_parent).hasClass('group_terminado')) {
+          if ($(panel_parent).hasClass('group-terminado')) {
             return 'terminado';
           }
-          if ($(panel_parent).hasClass('group_control-de-calidad')) {
+          if ($(panel_parent).hasClass('group-control-de-calidad')) {
             return 'control-de-calidad';
           }
-          if ($(panel_parent).hasClass('group_empaque')) {
+          if ($(panel_parent).hasClass('group-empaque')) {
             return 'empaque';
           }
         }
@@ -272,17 +347,27 @@
         });
 
         //Configura los imputs para permitir solo numeros
+        var total = 0;
         $('input[data-custom-num="1"]').each(function (i, e) {
+
+          total += parseInt($(this).val());
+          $('#edit-field-total-prendas-und-0-value').val(total);
 
           $(e).blur(function () {
             var val = $(this).val();
             var max = $(this).attr('data-max');
+            total = 0;
+
             if (parseInt(val) > parseInt(max)) {
               $(this).val(max);
               $('body').append('<div class="msg-text">El valor ingresado supera el máximo para este item. Recuerde no superar el valor máximo.</div>');
               $('.msg-text').fadeOut(0);
               $('.msg-text').fadeIn(800);
             }
+            $('input[data-custom-num="1"]').each(function () {
+              total += parseInt($(this).val());
+              $('#edit-field-total-prendas-und-0-value').val(total);
+            });
           });
           $(e).keydown(function (el)
           {
