@@ -126,7 +126,7 @@
             sam = parseFloat(data.sam_terminado);
             completado = data.completado_terminado;
           }
-          else if (grupo == 'control-de-calidad') {
+          else if (grupo == 'control_de_calidad') {
             sam = parseFloat(data.sam_control_de_calidad);
             completado = data.completado_control_de_calidad;
           }
@@ -243,10 +243,6 @@
           });
         }
 
-        function getValorMinuto () {
-
-        }
-
         function getGrupo(panel_parent) {
           if ($(panel_parent).hasClass('group-corte')) {
             return 'corte';
@@ -261,7 +257,7 @@
             return 'terminado';
           }
           if ($(panel_parent).hasClass('group-control-de-calidad')) {
-            return 'control-de-calidad';
+            return 'control_de_calidad';
           }
           if ($(panel_parent).hasClass('group-empaque')) {
             return 'empaque';

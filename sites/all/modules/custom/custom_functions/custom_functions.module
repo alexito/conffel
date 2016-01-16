@@ -23,6 +23,12 @@ function custom_functions_menu(){
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
+  $items['imprimir-diario/%node'] = array(
+    'page callback' => '_custom_functions_imprimir_diario',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
 }
@@ -34,6 +40,7 @@ function custom_functions_form_alter(&$form, &$form_state, $form_id) {
 
   if ($form_id == 'diario_node_form') {
     $form['#validate'][] = '_custom_functions_diario_validation';
+    $form['actions']['submit']['#submit'][] = '_custom_functions_diario_redirect_submit';
   }
   if ($form_id != 'views_exposed_form' && isset($form['nid']) && $form['nid']['#value'] == null) {
     $form['title']['#default_value'] = 'nulo';
@@ -102,45 +109,70 @@ function custom_functions_form_alter(&$form, &$form_state, $form_id) {
     $form['field_color']['#access'] = FALSE;
     $form['field_talla_y_cantidad']['#access'] = FALSE;
     
-    $form['actions']['submit']['#submit'][] = 'custom_submit';
+    $form['actions']['submit']['#submit'][] = '_custom_functions_tarjeta_redirect_submit';
   }
 }
 
+function _custom_functions_tarjeta_redirect_submit($form, &$form_state){
+  $form_state['redirect'] = 'imprimir-tarjeta-produccion/'. $form_state['nid'];
+}
+
+function _custom_functions_diario_redirect_submit($form, &$form_state){
+  $form_state['redirect'] = 'imprimir-diario-produccion/'. $form_state['nid'];
+}
+
 function _custom_functions_diario_validation($form, &$form_state) {
-  $a = 0;
 
-  // CORTE
-  foreach ($form_state['values']['field_crt_modulos'][LANGUAGE_NONE] as $modulo) {
+  $categorias = array(
+    'crt' => 'corte',
+    'cnf' => 'confeccion',
+    'prp' => 'preparacion',
+    'trm' => 'terminado',
+    'cnt' => 'control_de_calidad',
+    'mpq' => 'empaque'
+  );
 
-    if (is_array($modulo)) {
-      foreach ($modulo['field_tarjetas'][LANGUAGE_NONE] as $tarjeta) {
-        if (is_array($tarjeta)) {
-          if ($tarjeta['field_tarjeta'][LANGUAGE_NONE][0]['nid'] != NULL) {
-            $node = node_load($tarjeta['field_tarjeta'][LANGUAGE_NONE][0]['nid']);
-            $data = _custom_functions_get_tarjeta_info($node, 'corte', FALSE);
-            $a = 0;
-            $uds = intval($tarjeta['field_uds'][LANGUAGE_NONE][0]['value']);
-            $fallas = intval($tarjeta['field_fallas'][LANGUAGE_NONE][0]['value']);
-            if (($uds + $fallas) > intval($data->restantes)) {
-              form_set_error('field_crt_modulos', 'La suma total de UDS + Fallas no debe ser mayor al Máximo');
-            }
-            if (($uds + $fallas) == intval($data->restantes)) {
-              $node->field_completado_corte[LANGUAGE_NONE][0]['value'] = TRUE;
-              node_save($node);
+  foreach ($categorias as $key => $grupo) {
+
+    $field_categoria = 'field_' . $key . '_modulos';
+
+    foreach ($form_state['values'][$field_categoria][LANGUAGE_NONE] as $modulo) {
+
+      if (is_array($modulo)) {
+        foreach ($modulo['field_tarjetas'][LANGUAGE_NONE] as $tarjeta) {
+
+          if (is_array($tarjeta)) {
+            if ($tarjeta['field_tarjeta'][LANGUAGE_NONE][0]['nid'] != NULL) {
+
+              $node = node_load($tarjeta['field_tarjeta'][LANGUAGE_NONE][0]['nid']);
+
+              $llamada_ajax = FALSE;
+              $data = _custom_functions_get_tarjeta_info($node, $grupo, $llamada_ajax);
+
+              $uds = intval($tarjeta['field_uds'][LANGUAGE_NONE][0]['value']);
+              $fallas = intval($tarjeta['field_fallas'][LANGUAGE_NONE][0]['value']);
+
+              if (($uds + $fallas) > intval($data->restantes)) {
+                form_set_error($field_categoria, 'Aviso: La suma total de UDS + Fallas no debe ser mayor al Máximo');
+              }
+
+              if (($uds + $fallas) == intval($data->restantes)) {
+                
+                //Actualiza la tarjeta indicando la categoria que se ha completado
+                
+                $completado_categoria = ($grupo == 'control_de_calidad') ? 'field_completado_control_calidad' : 'field_completado_' . $grupo;
+                
+                $node->$completado_categoria[LANGUAGE_NONE][0]['value'] = TRUE;
+                node_save($node);
+              }
             }
           }
         }
       }
     }
   }
-
-  form_set_error('title', 'Title cannot be "test"');
-
 }
 
-function custom_submit($form, &$form_state){
-  $form_state['redirect'] = 'imprimir-tarjeta-produccion/'. $form_state['nid']; 
-}
 
 function custom_functions_node_presave($node) {
   $a = 0;
@@ -318,8 +350,12 @@ function getActionsLinks($node, $tarjeta = TRUE){
    $output = get_corte_values(null, null, $node->nid, null);
    return theme('imprimir_corte', array('output' => $output));
  }
- 
- function _custom_functions_imprimir_tarjeta_produccion($node){   
+
+function _custom_functions_imprimir_diario($node) {
+
+}
+
+ function _custom_functions_imprimir_tarjeta_produccion($node) {
    $wrapper = entity_metadata_wrapper('node', $node);
    $node->cliente_nombre = $wrapper->field_cliente->name->value();
    $node->modelo_nombre = $wrapper->field_nodo_corte->field_modelo->name->value();
@@ -331,19 +367,20 @@ function getActionsLinks($node, $tarjeta = TRUE){
    foreach ($node->tela as $tela) {
      $node->tela_nombre .= $tela->name . ', ';
    }
-   
+
    $corte = node_load($node->field_nodo_corte[LANGUAGE_NONE][0]['nid']);
    $user_corte = user_load($corte->uid);
-   if(isset($user_corte->field_nombre_y_apellido[LANGUAGE_NONE][0])){
+   if (isset($user_corte->field_nombre_y_apellido[LANGUAGE_NONE][0])) {
      $node->user_corte_nombre = $user_corte->field_nombre_y_apellido[LANGUAGE_NONE][0]['value'];
-   }else{
+   }
+   else {
      $node->user_corte_nombre = $corte->uid;
    }
 
    $tallas_cantidades = array();
    $cantidad_total = 0;
    $i = 0;
-   foreach($node->field_fc_talla_y_cantidad[LANGUAGE_NONE] as $temp) {
+   foreach ($node->field_fc_talla_y_cantidad[LANGUAGE_NONE] as $temp) {
      $fc = field_collection_item_load($temp['value']);
      $tid = $fc->field_talla[LANGUAGE_NONE][0]['tid'];
 
@@ -360,7 +397,7 @@ function getActionsLinks($node, $tarjeta = TRUE){
    $node->tallas_cantidades = $tallas_cantidades;
    $node->cantidad_total = $cantidad_total;
 
-   
+
    return theme('imprimir_tarjeta_produccion', array('output' => $node));
  }
 
@@ -396,7 +433,7 @@ function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
   if ($results) {
     $fci = $results['field_collection_item'];
 
-    foreach($fci as $key => $item) {
+    foreach ($fci as $key => $item) {
       $fc_tarjeta = field_collection_item_load($key);
 
       $total_hechas += intval($fc_tarjeta->field_uds[LANGUAGE_NONE][0]['value']);
