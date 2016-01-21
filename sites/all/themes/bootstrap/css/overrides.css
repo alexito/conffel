@@ -159,3 +159,6 @@ a.tabledrag-handle{
 .panel-body > div > div > div > table.field-multiple-table > tbody > tr{
   border-bottom: 2px dashed;
 }
+.views-widget-filter-field_modelo_tid{
+  max-width: 300px;
+}

@@ -123,11 +123,17 @@ function _custom_functions_diario_redirect_submit($form, &$form_state){
 
 function _custom_functions_diario_validation($form, &$form_state) {
 
+  if ($_GET['q'] == 'system/ajax') {
+    return;
+  }
   $categorias = array(
-    'crt' => 'corte',
     'cnf' => 'confeccion',
     'prp' => 'preparacion',
     'trm' => 'terminado',
+    'trm2' => 'terminado_2',
+    'stm' => 'estampado',
+    'brd' => 'bordado',
+    'trn' => 'transfer',
     'cnt' => 'control_de_calidad',
     'mpq' => 'empaque'
   );
@@ -159,10 +165,33 @@ function _custom_functions_diario_validation($form, &$form_state) {
               if (($uds + $fallas) == intval($data->restantes)) {
                 
                 //Actualiza la tarjeta indicando la categoria que se ha completado
-                
-                $completado_categoria = ($grupo == 'control_de_calidad') ? 'field_completado_control_calidad' : 'field_completado_' . $grupo;
-                
-                $node->$completado_categoria[LANGUAGE_NONE][0]['value'] = TRUE;
+                if ($grupo == 'confeccion') {
+                  $node->field_completado_confeccion[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
+                else if ($grupo == 'preparacion') {
+                  $node->field_completado_preparacion[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
+                else if ($grupo == 'terminado') {
+                  $node->field_completado_terminado[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
+                else if ($grupo == 'terminado2') {
+                  $node->field_completado_terminado_2[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
+                else if ($grupo == 'bordado') {
+                  $node->field_completado_bordado[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
+                else if ($grupo == 'estampado') {
+                  $node->field_completado_estampado[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
+                else if ($grupo == 'transfer') {
+                  $node->field_completado_transfer[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
+                else if ($grupo == 'control_de_calidad') {
+                  $node->field_completado_control_calidad[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
+                else if ($grupo == 'empaque') {
+                  $node->field_completado_empaque[LANGUAGE_NONE][0]['value'] = TRUE;
+                }
                 node_save($node);
               }
             }
@@ -175,7 +204,7 @@ function _custom_functions_diario_validation($form, &$form_state) {
 
 
 function custom_functions_node_presave($node) {
-  $a = 0;
+
   if($node->type == 'corte') {
     if ($node->is_new) {
       $node->title = get_new_id($node->type);
@@ -221,7 +250,6 @@ function custom_functions_node_presave($node) {
 // Obtiene el nuevo id para Corte/TProduccion
 function get_new_id($tipo) {
   $query = new EntityFieldQuery();
-
   $result = $query
     ->entityCondition('entity_type', 'node')
     ->entityCondition('bundle', $tipo)
@@ -230,8 +258,15 @@ function get_new_id($tipo) {
     ->execute();
 
   $new_id = intval($result) + 1;
-
-  return ($tipo == 'corte') ? 'C-' . $new_id : ($tipo == 'diario') ? 'D-' . $new_id : 'T-' . $new_id;
+  if ($tipo == "corte") {
+    return 'C-' . $new_id;
+  }
+  else if ($tipo == "diario") {
+    return 'D-' . $new_id;
+  }
+  else {
+    return 'T-' . $new_id;
+  }
 }
 
 function get_t_producciones_del_corte($nid){
@@ -337,12 +372,12 @@ function getActionsLinks($node, $tarjeta = TRUE){
   $resp->nueva_tarjeta_produccion = '';
   if ($tarjeta) {
     $resp->nueva_tarjeta_produccion .=
-      '<p><a href="node/add/tarjeta-de-produccion?corte=' . $node->nid . '" class="btn btn-success" target="_blank"> </a> Crear Tarjeta de Producción</p>';
+      '<p><a href="node/add/tarjeta-de-produccion" class="btn btn-success"> </a> Crear Tarjeta de Producción</p>';
   }
 
   $resp->nueva_tarjeta_produccion .=
     '<p><a href="print/imprimir-corte/' . $node->nid . '" class="btn btn-info" target="_blank"> </a> Imprimir Corte</p>' .
-    '<p><a href="node/' . $node->nid . '/edit?destination=inicio?nid=' . $node->nid . '" class="btn btn-danger"> </a> Editar Corte</p>';
+    '<p><a href="node/' . $node->nid . '/edit?destination=inicio?destination=inicio" class="btn btn-danger"> </a> Editar Corte</p>';
   return $resp;
 }
 
@@ -407,17 +442,23 @@ function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
 
   $data->total_prendas = $wrapper->field_total_prendas->value();
 
-  $data->sam_corte = $wrapper->field_sam_corte->value();
   $data->sam_confeccion = $wrapper->field_sam_confeccion->value();
   $data->sam_preparacion = $wrapper->field_sam_preparacion->value();
   $data->sam_terminado = $wrapper->field_sam_terminado->value();
+  $data->sam_terminado_2 = $wrapper->field_sam_terminado_2->value();
+  $data->sam_bordado = $wrapper->field_sam_bordado->value();
+  $data->sam_estampado = $wrapper->field_sam_estampado->value();
+  $data->sam_transfer = $wrapper->field_sam_transfer->value();
   $data->sam_control_de_calidad = $wrapper->field_sam_control_de_calidad->value();
   $data->sam_empaque = $wrapper->field_sam_empaque->value();
 
-  $data->completado_corte = $wrapper->field_completado_corte->value();
   $data->completado_confeccion = $wrapper->field_completado_confeccion->value();
   $data->completado_preparacion = $wrapper->field_completado_preparacion->value();
   $data->completado_terminado = $wrapper->field_completado_terminado->value();
+  $data->completado_terminado_2 = $wrapper->field_completado_terminado_2->value();
+  $data->completado_bordado = $wrapper->field_completado_bordado->value();
+  $data->completado_estampado = $wrapper->field_completado_estampado->value();
+  $data->completado_transfer = $wrapper->field_completado_transfer->value();
   $data->completado_control_de_calidad = $wrapper->field_completado_control_calidad->value();
   $data->completado_empaque = $wrapper->field_completado_empaque->value();
 

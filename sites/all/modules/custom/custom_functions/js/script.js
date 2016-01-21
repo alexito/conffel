@@ -3,7 +3,7 @@
     attach: function (context, settings) {
       $(window).load(function () {
 
-        var cat = ['crt', 'cnf', 'prp', 'trm', 'cnt', 'mpq'];
+        var cat = ['prp', 'cnf', 'trm','trm2', 'stm', 'brd', 'trn', 'cnt', 'mpq'];
         var global_tarjetas = [];
 
         // Diario
@@ -55,18 +55,22 @@
             // ---------------- TARJETA
             $('.field-name-field-tarjeta:not(.processed)', panel).addClass('processed').each(function() {
               var tarjeta = this;
-              $('input.form-text', tarjeta).blur(function() {
+              $('input.form-text', tarjeta).blur(function () {
                 if ($(this).val() == '') {
                   return;
                 }
                 var nid = $(this).val().split(':');
-                nid = nid[1].split(']');
-                nid = nid[0];
-
-                $.post( "/get-tarjeta-info/" + nid + "/" + grupo, function( data ) {
-                  global_tarjetas[nid] = data;
-                  setTarjeta(data, grupo, tarjeta, panel, valor_minuto);
-                });
+                try {
+                  nid = nid[1].split(']');
+                  nid = nid[0];
+                  $.post("/get-tarjeta-info/" + nid + "/" + grupo, function (data) {
+                    global_tarjetas[nid] = data;
+                    setTarjeta(data, grupo, tarjeta, panel, valor_minuto);
+                  });
+                }
+                catch (exc) {
+                  $(this).val('');
+                }
               });
             });
 
@@ -105,7 +109,6 @@
         });
 
         function setTarjeta(data, grupo, tarjeta, panel, valor_minuto) {
-          console.log(data);
           $('.custom-info-t, .custom-info-o, .custom-info-i').remove();
 
           var sam = 0;
@@ -135,12 +138,12 @@
             completado = data.completado_empaque;
           }
           if (completado) {
-            $(tarjeta).parent().append('<code class="custom-info-t">La tarjeta esta bloqueada para esta categoría</code>');
+            $(tarjeta).parent().append('<code class="custom-info-i">La tarjeta esta bloqueada para esta categoría</code>');
             $(tarjeta).parent().find('.field-name-field-tarjeta input.form-text').val('');
           }
           else{
             $(tarjeta).parent().find('.field-name-field-sam input.form-text').val(sam);
-            $(tarjeta).parent().find('.field-name-field-fallas').append('<code>Max( ' + data.restantes + ' )</code>');
+            $(tarjeta).parent().find('.field-name-field-fallas').append('<code class="custom-info-i">Max( ' + data.restantes + ' )</code>');
             calcularPanel(panel, valor_minuto);
           }
         }
@@ -244,17 +247,26 @@
         }
 
         function getGrupo(panel_parent) {
-          if ($(panel_parent).hasClass('group-corte')) {
-            return 'corte';
+          if ($(panel_parent).hasClass('group-preparacion')) {
+            return 'preparacion';
           }
           if ($(panel_parent).hasClass('group-confeccion')) {
             return 'confeccion';
           }
-          if ($(panel_parent).hasClass('group-preparacion')) {
-            return 'preparacion';
-          }
           if ($(panel_parent).hasClass('group-terminado')) {
             return 'terminado';
+          }
+          if ($(panel_parent).hasClass('group-terminado-2')) {
+            return 'terminado2';
+          }
+          if ($(panel_parent).hasClass('group-estampado')) {
+            return 'estampado';
+          }
+          if ($(panel_parent).hasClass('group-bordado')) {
+            return 'bordado';
+          }
+          if ($(panel_parent).hasClass('group-transfer')) {
+            return 'transfer';
           }
           if ($(panel_parent).hasClass('group-control-de-calidad')) {
             return 'control_de_calidad';

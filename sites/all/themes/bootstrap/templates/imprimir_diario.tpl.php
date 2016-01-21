@@ -7,7 +7,7 @@
     </ul>
   </div>
   <div class="col-sm-12 text-center">
-    <b>CONFFEL</b>  <br> <b>DIARIO</b>
+    <b>Marcotex</b>  <br> <b>DIARIO</b>
   </div>
   <div class="col-sm-12">
     <h4><b>Fecha:</b>  <?php print $output->fecha; ?></h4>

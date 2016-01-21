@@ -1,6 +1,6 @@
 <div class="imprimir-corte">
   <div class="col-sm-12 text-center">
-    <b>CONFFEL</b>  <br> <b>ORDEN DE TRAZO</b>
+    <b>Marcotex</b>  <br> <b>ORDEN DE TRAZO</b>
   </div>
 
   <div class="col-sm-12 text-right">    
