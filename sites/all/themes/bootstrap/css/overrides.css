@@ -162,3 +162,84 @@ a.tabledrag-handle{
 .views-widget-filter-field_modelo_tid{
   max-width: 300px;
 }
+#edit-field-tela div.autocomplete-deluxe-multiple {
+  width: auto;
+  padding: 0;
+}
+#edit-field-tela div.autocomplete-deluxe-multiple .autocomplete-deluxe-throbber {
+  display: none;
+}
+#edit-field-tela div.autocomplete-deluxe-multiple .autocomplete-deluxe-form {
+
+}
+#edit-locale, .form-type-checkbox.form-item-notify, .form-item-status, .form-type-textfield .help-block, .password-strength,
+.password-suggestions.description, #edit-roles .form-item-roles-2, #edit-roles .form-item-roles-3,
+.navbar-nav.secondary .first.leaf {
+  display: none;
+}
+.field-name-field-fallas {
+  min-width: 220px;
+}
+
+/*--------------- REPORTE LISTA DIARIO --------------*/
+.page-reporte-diario .view-content {
+  font-family: Consolas,monospace;
+}
+.page-reporte-diario .field-collection-view-links,
+.page-reporte-diario .action-links.action-links-field-collection-add{
+  display: none;
+
+}
+.page-reporte-diario .field-collection-view,
+.page-reporte-diario .field-collection-container{
+  border: none;
+}
+.page-reporte-diario .field-collection-item-field-operadores > .content,
+.page-reporte-diario .field-collection-item-field-tarjetas > .content {
+  display: table;
+}
+.page-reporte-diario .field-collection-item-field-operadores > .content > *,
+.page-reporte-diario .field-collection-item-field-tarjetas .content > * {
+  display: table-cell;
+}
+.page-reporte-diario .field-collection-item-field-operadores > .content > .field-name-field-operador {
+  width: 40%;
+}
+.page-reporte-diario .field-name-field-operadores > .field-items > .field-item,
+.page-reporte-diario .field-name-field-tarjetas > .field-items > .field-item {
+  border-bottom: 1px dotted #c1c1c1;
+}
+.page-reporte-diario .entity-field-collection-item > .content > .field-name-field-total-us,
+.page-reporte-diario .entity-field-collection-item > .content > .field-name-field-eficiencia {
+  float: right;
+  margin-right: 20px;
+}
+.page-reporte-diario .field-name-field-fallas{
+  min-width: auto;
+}
+.page-reporte-diario .field-name-field-fallas > div{
+  display: block;
+}
+.page-reporte-diario .field-name-field-operadores,
+.page-reporte-diario .field-name-field-tarjetas{
+  width: 100%;
+}
+.page-reporte-diario .field-collection-view .field-label {
+  width: auto;
+}
+.page-reporte-diario .views-field > .field-content ol li > .entity-field-collection-item {
+  border: 1px solid #2c2c2c;
+  padding: 5px;
+}
+.page-reporte-diario .item-list {
+  border: 1px solid #c1c1c1;
+  padding: 10px;
+}
+.page-reporte-diario .date-display-single,
+.page-reporte-diario .views-label {
+  font-weight: 600;
+  font-size: 15px;
+  padding-top: 15px;
+  display: block;
+  text-decoration: underline;
+}

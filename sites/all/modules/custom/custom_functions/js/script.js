@@ -33,7 +33,7 @@
             // Valor Minuto
             if ($(this).val() == '') {
               valor_minuto = 0;
-              $(this).val(0);
+              //$(this).val(0);
             }
             else {
               try{
@@ -41,7 +41,7 @@
                 $(this).val(valor_minuto);
               }catch (e){
                 valor_minuto = 0;
-                $(this).val(0);
+                //$(this).val(0);
               }
             }
 
@@ -245,6 +245,13 @@
             calcularModulo(modulo, panel, valor_minuto);
           });
         }
+
+        setInterval(function () {
+          if ($('.ui-autocomplete.ui-corner-all').length > 0) {
+            $('.ui-autocomplete.ui-corner-all').css('top', $('#edit-field-tela #autocomplete-deluxe-input').offset().top + $('#edit-field-tela #autocomplete-deluxe-input').height() - 10);
+            $('.ui-autocomplete.ui-corner-all').css('left', $('#edit-field-tela #autocomplete-deluxe-input').offset().left);
+          }
+        }, 500);
 
         function getGrupo(panel_parent) {
           if ($(panel_parent).hasClass('group-preparacion')) {

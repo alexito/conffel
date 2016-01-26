@@ -97,35 +97,39 @@
     <div class="col-sm-6">
       <table class="table table-bordered">
         <tr>
-          <td><b>ETQ. SATIN AZUL: </b></td>     
+          <td><b>Transfer: </b></td>
           <td></td>
         </tr>
         <tr>
-          <td><b>ETQ. INSTRUCCION 100% ALG: </b></td>
+          <td><b>Vinil: </b></td>
           <td></td>
         </tr>        
         <tr>
-          <td><b>REATA MEN=24CM: </b></td>       
+          <td><b>Cierres: </b></td>
           <td></td>
         </tr>
         <tr>
-          <td><b>CODIGOS: </b></td>     
+          <td><b>Reata: </b></td>
           <td></td>
         </tr>
         <tr>
-          <td><b>PLASTIFLECHAS: </b></td>
+          <td><b>Cordon: </b></td>
           <td></td>
         </tr>
         <tr>
-          <td></td>       
+          <td><b>Chips: </b></td>
           <td></td>
         </tr>
         <tr>
-          <td></td>       
+          <td><b>Fundas: </b></td>
           <td></td>
         </tr>
         <tr>
-          <td></td>       
+          <td><b>Broches: </b></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><b>Ojacillos: </b></td>
           <td></td>
         </tr>
         <tr>

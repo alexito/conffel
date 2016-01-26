@@ -372,7 +372,11 @@ function getActionsLinks($node, $tarjeta = TRUE){
   $resp->nueva_tarjeta_produccion = '';
   if ($tarjeta) {
     $resp->nueva_tarjeta_produccion .=
-      '<p><a href="node/add/tarjeta-de-produccion" class="btn btn-success"> </a> Crear Tarjeta de Producción</p>';
+      '<p><a href="node/add/tarjeta-de-produccion?corte=' . $node->nid . '" class="btn btn-success"> </a> Crear Tarjeta de Producción</p>';
+  }
+  else {
+    $resp->nueva_tarjeta_produccion .=
+      '<p><code>BLOQUEADA</code></p>';
   }
 
   $resp->nueva_tarjeta_produccion .=

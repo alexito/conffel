@@ -4,7 +4,7 @@
   </div>
 
   <div class="col-sm-12 text-right">    
-    PEDIDO Nº: __<?php print $output->node->nid;?>__
+    CODIGO: <?php print $output->node->title;?>
   </div>
   <span class="col-sm-6">
     <table class="table table-bordered">
