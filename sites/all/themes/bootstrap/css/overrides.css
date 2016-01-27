@@ -182,6 +182,7 @@ a.tabledrag-handle{
 }
 
 /*--------------- REPORTE LISTA DIARIO --------------*/
+
 .page-reporte-diario .view-content {
   font-family: Consolas,monospace;
 }
@@ -197,6 +198,7 @@ a.tabledrag-handle{
 .page-reporte-diario .field-collection-item-field-operadores > .content,
 .page-reporte-diario .field-collection-item-field-tarjetas > .content {
   display: table;
+  width: 100%;
 }
 .page-reporte-diario .field-collection-item-field-operadores > .content > *,
 .page-reporte-diario .field-collection-item-field-tarjetas .content > * {
@@ -242,4 +244,74 @@ a.tabledrag-handle{
   padding-top: 15px;
   display: block;
   text-decoration: underline;
+}
+.page-reporte-diario .link-imprimir a{
+  float: right;
+}
+
+/*------------ Imprimir diario---------*/
+.print-content .view-content {
+  font-family: Consolas,monospace;
+}
+.print-content .field-collection-view-links,
+.print-content .action-links.action-links-field-collection-add{
+  display: none;
+
+}
+.print-content .field-collection-view,
+.print-content .field-collection-container{
+  border: none;
+}
+.print-content .field-collection-item-field-operadores > .content,
+.print-content .field-collection-item-field-tarjetas > .content {
+  display: table;
+  width: 100%;
+}
+.print-content .field-collection-item-field-operadores > .content > *,
+.print-content .field-collection-item-field-tarjetas .content > * {
+  display: table-cell;
+}
+.print-content .field-collection-item-field-operadores > .content > .field-name-field-operador {
+  width: 40%;
+}
+.print-content .field-name-field-operadores > .field-items > .field-item,
+.print-content .field-name-field-tarjetas > .field-items > .field-item {
+  border-bottom: 1px dotted #c1c1c1;
+}
+.print-content .entity-field-collection-item > .content > .field-name-field-total-us,
+.print-content .entity-field-collection-item > .content > .field-name-field-eficiencia {
+  float: right;
+  margin-right: 20px;
+}
+.print-content .field-name-field-fallas{
+  min-width: auto;
+}
+.print-content .field-name-field-fallas > div{
+  display: block;
+}
+.print-content .field-name-field-operadores,
+.print-content .field-name-field-tarjetas{
+  width: 100%;
+}
+.print-content .field-collection-view .field-label {
+  width: auto;
+}
+.print-content .views-field > .field-content ol li > .entity-field-collection-item {
+  border: 1px solid #2c2c2c;
+  padding: 5px;
+}
+.print-content .item-list {
+  border: 1px solid #c1c1c1;
+  padding: 10px;
+}
+.print-content .date-display-single,
+.print-content .views-label {
+  font-weight: 600;
+  font-size: 15px;
+  padding-top: 15px;
+  display: block;
+  text-decoration: underline;
+}
+.print-content .view-filters, .print-content .link-imprimir {
+  display: none;
 }

@@ -20,7 +20,7 @@
               $('.field-multiple-drag', panel).remove();
               //$('.hide', panel).removeClass('hide');
             }
-          }, 500)
+          }, 500);
 
 
           // Ejecuta recalculacion despues de algun cambio en el valor minuto
@@ -46,7 +46,10 @@
             }
 
             // Recalcula el panel completo
-            calcularPanel(panel, valor_minuto);
+            if (valor_minuto != 0 && valor_minuto != '') {
+              calcularPanel(panel, valor_minuto);
+            }
+
           });
 
           // Adjunta comportamiento a los campos
@@ -95,14 +98,18 @@
                     return;
                   }
                 }
-                calcularPanel(panel, valor_minuto);
+                if (valor_minuto != 0 && valor_minuto != '') {
+                  calcularPanel(panel, valor_minuto);
+                }
               });
             });
 
             // Asigna el grupo al que pertenece la tarjeta
-            $('.field-name-field-categoria:not(.processed)', panel).addClass('processed').each(function() {
-              $('input.form-text', this).val(grupo);
-            });
+            if (valor_minuto != 0) {
+              $('.field-name-field-categoria:not(.processed)', panel).addClass('processed').each(function() {
+                $('input.form-text', this).val(grupo);
+              });
+            }
 
           }, 500);
 
@@ -113,21 +120,33 @@
 
           var sam = 0;
           var completado = false;
-          if (grupo == 'corte') {
-            sam = parseFloat(data.sam_corte);
-            completado = data.completado_corte;
+          if (grupo == 'preparacion') {
+            sam = parseFloat(data.sam_preparacion);
+            completado = data.completado_preparacion;
           }
           else if (grupo == 'confeccion') {
             sam = parseFloat(data.sam_confeccion);
             completado = data.completado_confeccion;
           }
-          else if (grupo == 'preparacion') {
-            sam = parseFloat(data.sam_preparacion);
-            completado = data.completado_preparacion;
-          }
           else if (grupo == 'terminado') {
             sam = parseFloat(data.sam_terminado);
             completado = data.completado_terminado;
+          }
+          else if (grupo == 'terminado2') {
+            sam = parseFloat(data.sam_terminado_2);
+            completado = data.completado_terminado_2;
+          }
+          else if (grupo == 'estampado') {
+            sam = parseFloat(data.sam_estampado);
+            completado = data.completado_estampado;
+          }
+          else if (grupo == 'bordado') {
+            sam = parseFloat(data.sam_bordado);
+            completado = data.completado_bordado;
+          }
+          else if (grupo == 'transfer') {
+            sam = parseFloat(data.sam_transfer);
+            completado = data.completado_transfer;
           }
           else if (grupo == 'control_de_calidad') {
             sam = parseFloat(data.sam_control_de_calidad);
@@ -144,7 +163,9 @@
           else{
             $(tarjeta).parent().find('.field-name-field-sam input.form-text').val(sam);
             $(tarjeta).parent().find('.field-name-field-fallas').append('<code class="custom-info-i">Max( ' + data.restantes + ' )</code>');
-            calcularPanel(panel, valor_minuto);
+            if (valor_minuto != 0 && valor_minuto != '') {
+              calcularPanel(panel, valor_minuto);
+            }
           }
         }
 
@@ -251,6 +272,10 @@
             $('.ui-autocomplete.ui-corner-all').css('top', $('#edit-field-tela #autocomplete-deluxe-input').offset().top + $('#edit-field-tela #autocomplete-deluxe-input').height() - 10);
             $('.ui-autocomplete.ui-corner-all').css('left', $('#edit-field-tela #autocomplete-deluxe-input').offset().left);
           }
+          // Actualiza el link para imprimir
+          if ($('.link-imprimir').length > 0) {
+            $('.link-imprimir a').attr('href', '/print' + location.pathname + location.search);
+          }
         }, 500);
 
         function getGrupo(panel_parent) {
@@ -302,6 +327,18 @@
             (key >= 96 && key <= 105));
           });
         };
+
+        // Remueve las categorias vacias del reporte
+        /*setInterval(function() {
+          if ($('body').hasClass('page-reporte-diario')) {
+            $('.content').each(function() {
+              if ($(this).children().length == 0) {
+                var parent = $(this).closest('.views-field');
+                $(parent).remove();
+              }
+            });
+          }
+        }, 1)*/
 
         //Actualiza textos de los botones
         if (!$('body').hasClass('page-inicio')) {

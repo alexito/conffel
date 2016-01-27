@@ -118,7 +118,7 @@ function _custom_functions_tarjeta_redirect_submit($form, &$form_state){
 }
 
 function _custom_functions_diario_redirect_submit($form, &$form_state){
-  $form_state['redirect'] = 'imprimir-diario-produccion/'. $form_state['nid'];
+  $form_state['redirect'] = 'reporte/diario';
 }
 
 function _custom_functions_diario_validation($form, &$form_state) {
@@ -505,4 +505,59 @@ function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
 
 }
 
+function _custom_functions_save_user_rol_de_pagos($fc) {
+  if (stripos($fc->field_name, 'modulos') !== FALSE && $fc->is_new) {
+    foreach ($fc->field_operadores[LANGUAGE_NONE] as $field_operador) {
 
+      $fc_id = $fc->item_id;
+      $diario = field_collection_item_get_host_entity($fc);
+      $fecha = $diario->field_fecha->value();
+      $dnid = $diario->nid->value();
+
+      $fc_operador = field_collection_item_load($field_operador['value']);
+      $uid = $fc_operador->field_operador[LANGUAGE_NONE][0]['uid'];
+      $real_horas = $fc_operador->field_real_horas[LANGUAGE_NONE][0]['value'];
+      $us = $fc_operador->field_us[LANGUAGE_NONE][0]['value'];
+
+      $node = custom_functions_init_node('rol_de_pagos_operador');
+
+      $node->field_diario[LANGUAGE_NONE][]['nid'] = $dnid;
+
+      $node->field_operador[LANGUAGE_NONE][]['uid'] = $uid;
+      $node->field_fecha[LANGUAGE_NONE][] = $fecha[0];
+      $node->field_real_horas[LANGUAGE_NONE][] = $real_horas;
+      $node->field_us[LANGUAGE_NONE][] = $us;
+
+      foreach ($fc->field_tarjetas[LANGUAGE_NONE] as $field_tarjeta) {
+
+        $fc_tarjeta = field_collection_item_load($field_tarjeta['value']);
+        $node->field_tarjeta[LANGUAGE_NONE][]['nid'] = $fc_tarjeta->field_tarjeta[LANGUAGE_NONE][0]['nid'];
+
+        //$tarjeta = node_load($fc_tarjeta->field_tarjeta[LANGUAGE_NONE][0]['nid']);
+        //$corte = node_load($tarjeta->field_nodo_corte[LANGUAGE_NONE][0]['nid']);
+        //$modelo = taxonomy_term_load($corte->field_modelo[LANGUAGE_NONE][0]['tid']);
+
+        $a = 0;
+
+      }
+
+      $node = node_submit($node); // Prepare node for saving
+      node_save($node);
+    }
+  }
+}
+
+function custom_functions_init_node($type) {
+  global $user;
+  $node = new stdClass();
+  $node->title = time();
+  $node->type = $type;
+  node_object_prepare($node);
+  $node->language = LANGUAGE_NONE;
+  $node->uid = $user->uid;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->comment = 0;
+
+  return $node;
+}
