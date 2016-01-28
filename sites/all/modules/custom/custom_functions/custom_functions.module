@@ -1,5 +1,6 @@
 <?php
 
+include_once 'simple_html_dom.php';
 
 /**
  * Implement hook_menu
@@ -210,6 +211,12 @@ function custom_functions_node_presave($node) {
       $node->title = get_new_id($node->type);
     }
   }
+  if($node->type == 'extra') {
+    $a = 0;
+    if ($node->is_new) {
+      $node->title = get_new_id($node->type);
+    }
+  }
   if($node->type == 'tarjeta_de_produccion') {
     if ($node->is_new) {
       $node->title = get_new_id($node->type);
@@ -263,6 +270,9 @@ function get_new_id($tipo) {
   }
   else if ($tipo == "diario") {
     return 'D-' . $new_id;
+  }
+  else if ($tipo == "extra") {
+    return 'E-' . $new_id;
   }
   else {
     return 'T-' . $new_id;
@@ -484,10 +494,10 @@ function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
       $total_hechas += intval($fc_tarjeta->field_uds[LANGUAGE_NONE][0]['value']);
       $total_hechas += intval($fc_tarjeta->field_fallas[LANGUAGE_NONE][0]['value']);
 
-      $tem = field_collection_item_get_host_entity($fc_tarjeta);
-      $fc_modulo = field_collection_item_load($tem->item_id->value());
-      $tem = field_collection_item_get_host_entity($fc_modulo);
-      $diario = node_load($tem->nid->value());
+      // $tem = field_collection_item_get_host_entity($fc_tarjeta);
+      // $fc_modulo = field_collection_item_load($tem->item_id->value());
+      // $tem = field_collection_item_get_host_entity($fc_modulo);
+      // $diario = node_load($tem->nid->value());
     }
   }
 
@@ -510,9 +520,9 @@ function _custom_functions_save_user_rol_de_pagos($fc) {
     foreach ($fc->field_operadores[LANGUAGE_NONE] as $field_operador) {
 
       $fc_id = $fc->item_id;
-      $diario = field_collection_item_get_host_entity($fc);
-      $fecha = $diario->field_fecha->value();
-      $dnid = $diario->nid->value();
+      $diario = $fc->hostEntity();;
+      $fecha = $diario->field_fecha[LANGUAGE_NONE];
+      //$temp = $fc->hostEntity();
 
       $fc_operador = field_collection_item_load($field_operador['value']);
       $uid = $fc_operador->field_operador[LANGUAGE_NONE][0]['uid'];
@@ -521,17 +531,17 @@ function _custom_functions_save_user_rol_de_pagos($fc) {
 
       $node = custom_functions_init_node('rol_de_pagos_operador');
 
-      $node->field_diario[LANGUAGE_NONE][]['nid'] = $dnid;
+      $node->field_diario[LANGUAGE_NONE][]['nid'] = $diario->nid;
 
       $node->field_operador[LANGUAGE_NONE][]['uid'] = $uid;
       $node->field_fecha[LANGUAGE_NONE][] = $fecha[0];
-      $node->field_real_horas[LANGUAGE_NONE][] = $real_horas;
-      $node->field_us[LANGUAGE_NONE][] = $us;
+      $node->field_real_horas[LANGUAGE_NONE][]['value'] = $real_horas;
+      $node->field_us[LANGUAGE_NONE][]['value'] = $us;
 
       foreach ($fc->field_tarjetas[LANGUAGE_NONE] as $field_tarjeta) {
 
         $fc_tarjeta = field_collection_item_load($field_tarjeta['value']);
-        $node->field_tarjeta[LANGUAGE_NONE][]['nid'] = $fc_tarjeta->field_tarjeta[LANGUAGE_NONE][0]['nid'];
+        $node->field_rol_tarjeta[LANGUAGE_NONE][]['nid'] = $fc_tarjeta->field_tarjeta[LANGUAGE_NONE][0]['nid'];
 
         //$tarjeta = node_load($fc_tarjeta->field_tarjeta[LANGUAGE_NONE][0]['nid']);
         //$corte = node_load($tarjeta->field_nodo_corte[LANGUAGE_NONE][0]['nid']);
@@ -550,7 +560,7 @@ function _custom_functions_save_user_rol_de_pagos($fc) {
 function custom_functions_init_node($type) {
   global $user;
   $node = new stdClass();
-  $node->title = time();
+  $node->title = $type . '-' . time();
   $node->type = $type;
   node_object_prepare($node);
   $node->language = LANGUAGE_NONE;
@@ -560,4 +570,49 @@ function custom_functions_init_node($type) {
   $node->comment = 0;
 
   return $node;
+}
+
+function _custom_functions_get_reports_links() {
+  return '<ul>
+<li><a href="/reporte/diario">Diario</a></li>
+<li><a href="/reporte/rol-de-pagos-operador">Rol de Pagos - Operador</a></li>
+<li><a href="/reporte/rol-de-pagos-mensual">Rol de Pagos - Mensual</a></li>
+</ul>';
+}
+
+function _custom_functions_get_crear_links() {
+  return '<ul>
+<li><a href="/node/add/corte">Nuevo Corte</a></li>
+<li><a href="/node/add/diario">Nuevo Diario</a></li>
+<li><a href="/node/add/extra">Nuevo Extra</a></li>
+</ul>';
+}
+
+function _custom_functions_get_extras($uid, $fecha) {
+  $query = new EntityFieldQuery();
+  $a = 0;
+  $fecha = explode(' - ', $fecha);
+  $fecha = explode('/', $fecha[0]);
+  $anio = $fecha[2];
+  $mes = $fecha[0];
+  $fecha = $anio . '-' . $mes . '-01 00:00:00';
+
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'extra')
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_mes', 'value', $fecha, '=')
+    ->fieldCondition('field_operador', 'uid', $uid, '=')
+    ->execute();
+
+  $extra = 0;
+
+  if ($result){
+    $nodes = node_load_multiple(array_keys($result['node']));
+    foreach ($nodes as $node) {
+      $extra = $extra + floatval($node->field_extra[LANGUAGE_NONE][0]['value']);
+    }
+  }
+
+  return $extra;
 }

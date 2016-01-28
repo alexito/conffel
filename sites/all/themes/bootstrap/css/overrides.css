@@ -49,7 +49,8 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
 #diario-node-form .form-item-title,
 .tabledrag-toggle-weight-wrapper,
 .node-form.node-corte-form .form-item-title,
-.page-t-produccion .node-tarjeta_de_produccion-form .form-item-title {
+.page-t-produccion .node-tarjeta_de_produccion-form .form-item-title,
+.page-node-add-extra .form-item-title {
   display: none;
 }
 
@@ -181,6 +182,9 @@ a.tabledrag-handle{
   min-width: 220px;
 }
 
+#edit_field_operador_uid_chosen{
+  height: auto;
+}
 /*--------------- REPORTE LISTA DIARIO --------------*/
 
 .page-reporte-diario .view-content {
@@ -245,7 +249,7 @@ a.tabledrag-handle{
   display: block;
   text-decoration: underline;
 }
-.page-reporte-diario .link-imprimir a{
+.link-imprimir a{
   float: right;
 }
 
@@ -314,4 +318,50 @@ a.tabledrag-handle{
 }
 .print-content .view-filters, .print-content .link-imprimir {
   display: none;
+}
+
+/*--------------- REPORTE ROL OPERADOR --------------*/
+.page-reporte-rol-de-pagos-operador .view-content{
+  font-family: Consolas,monospace;
+}
+.page-reporte-rol-de-pagos-operador .views-table caption{
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 20px;
+}
+.page-reporte-rol-de-pagos-operador .views-table {
+  border: 1px solid #c2c2c2;
+}
+.print-content .view-content{
+  font-family: Consolas,monospace;
+}
+.print-content .views-table caption{
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 20px;
+}
+.print-content .views-table {
+  border: 1px solid #c2c2c2;
+}
+.print-content .view-rol-de-pagos-operador .date-display-single{
+  text-decoration: none;
+  font-weight: normal;
+  padding: 0;
+}
+
+/*--------------- REPORTE ROL MENSUAL --------------*/
+.page-reporte-rol-de-pagos-mensual .view-footer,
+.page-reporte-rol-de-pagos-mensual .view-content{
+  font-family: Consolas,monospace;
+}
+.page-reporte-rol-de-pagos-mensual .views-table caption{
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 20px;
+}
+.page-reporte-rol-de-pagos-mensual .views-table {
+  border: 1px solid #c2c2c2;
 }

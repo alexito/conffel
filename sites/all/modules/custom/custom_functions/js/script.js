@@ -276,6 +276,18 @@
           if ($('.link-imprimir').length > 0) {
             $('.link-imprimir a').attr('href', '/print' + location.pathname + location.search);
           }
+
+          if ($('.total-pagar').length > 0) {
+            var sumatotal = parseFloat(0);
+            $('.total-pagar').each(function(i, e){
+              sumatotal = sumatotal + parseFloat($('strong', this).text());
+              if (i+1 == $('.total-pagar').length) {
+                $('.total-pagar').removeClass('total-pagar');
+                $('.suma-total').html('<strong>Total = ' + sumatotal + '</strong>');
+              }
+            });
+          }
+
         }, 500);
 
         function getGrupo(panel_parent) {
