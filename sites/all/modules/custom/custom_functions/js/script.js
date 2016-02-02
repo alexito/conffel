@@ -6,6 +6,29 @@
         var cat = ['prp', 'cnf', 'trm','trm2', 'stm', 'brd', 'trn', 'cnt', 'mpq'];
         var global_tarjetas = [];
 
+        // Validacion de los campos de texto
+        setInterval(function(){
+          setAsDecimal($('.field-type-number-integer input[type="text"]:not(.processed)'));
+          $('.field-type-number-decimal input[type="text"]:not(.processed)').addClass('processed').each(function(){
+            setAsDecimal(this);
+            $(this).blur(function() {
+              if ($(this).val() == '') {
+                $(this).val(0);
+              }
+              else {
+                try{
+                  var temp = parseFloat($(this).val());
+                  $(this).val(temp);
+                }catch (e){
+                  $(this).val(0);
+                }
+              }
+            });
+          });
+        },1000);
+
+
+
         // Diario
         $('.node-diario-form .panel-body:not(.processed)').addClass('processed').each(function(){
           var panel = this;
@@ -413,11 +436,25 @@
         //Configura los imputs para permitir solo numeros
         var total = 0;
         $('input[data-custom-num="1"]').each(function (i, e) {
+          setAsDecimal(this);
 
           total += parseInt($(this).val());
           $('#edit-field-total-prendas-und-0-value').val(total);
 
-          $(e).blur(function () {
+          $(this).blur(function () {
+
+            if ($(this).val() == '') {
+              $(this).val(0);
+            }
+            else {
+              try{
+                var temp = parseInt($(this).val());
+                $(this).val(temp);
+              }catch (e){
+                $(this).val(0);
+              }
+            }
+
             var val = $(this).val();
             var max = $(this).attr('data-max');
             total = 0;
@@ -433,23 +470,7 @@
               $('#edit-field-total-prendas-und-0-value').val(total);
             });
           });
-          $(e).keydown(function (el)
-          {
-            var key = el.charCode || el.keyCode || 0;
-            // allow backspace, tab, delete, enter, arrows, numbers and keypad numbers ONLY
-            // home, end, period, and numpad decimal
-            return (
-                    key == 8 ||
-                    key == 9 ||
-                    key == 13 ||
-                    key == 46 ||
-                    key == 110 ||
-                    key == 188 ||
-                    key == 190 ||
-                    (key >= 35 && key <= 40) ||
-                    (key >= 48 && key <= 57) ||
-                    (key >= 96 && key <= 105));
-          });
+
         });
 
         // TARJETA DE PRODUCCION

@@ -55,8 +55,9 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
 }
 
 #edit-field-modelo,
+#edit-field-cortador,
 #edit-field-tela {
-  display: inline-block;
+  //display: inline-block;
   width: 45%;
   vertical-align: text-top;
   margin-right: 20px;
@@ -185,6 +186,21 @@ a.tabledrag-handle{
 #edit_field_operador_uid_chosen{
   height: auto;
 }
+label[for="edit-field-tela-und"]{
+  display: block;
+}
+.page-node .vertical-tabs,
+.page-taxonomy .panel.panel-default.form-wrapper,
+.page-taxonomy #edit-description-format {
+  display: none;
+}
+.form-type-date-select > div {
+  float: none !important;
+}
+.form-type-date-select .form-control{
+  width: 100% !important;
+}
+
 /*--------------- REPORTE LISTA DIARIO --------------*/
 
 .page-reporte-diario .view-content {

@@ -370,7 +370,7 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
   }
 
   
-  $resp->user = user_load($node->uid);
+  $resp->user = user_load(intval($node->field_cortador[LANGUAGE_NONE][0]['uid']));
   $resp->node = $node;
   $resp->modelo = taxonomy_term_load($node->field_modelo[LANGUAGE_NONE][0]['tid']);
   $resp->tela = taxonomy_term_load($node->field_tela[LANGUAGE_NONE][0]['tid']);
@@ -378,11 +378,15 @@ function get_corte_values($data, $row, $nid = 0, $tarjetas = NULL){
 }
 
 function getActionsLinks($node, $tarjeta = TRUE){
+  global $user;
+
   $resp = new stdClass();
   $resp->nueva_tarjeta_produccion = '';
   if ($tarjeta) {
-    $resp->nueva_tarjeta_produccion .=
-      '<p><a href="node/add/tarjeta-de-produccion?corte=' . $node->nid . '" class="btn btn-success"> </a> Crear Tarjeta de Producción</p>';
+    if (in_array('Admin', $user->roles) || in_array('administrator', $user->roles)) {
+      $resp->nueva_tarjeta_produccion .=
+        '<p><a href="node/add/tarjeta-de-produccion?corte=' . $node->nid . '" class="btn btn-success"> </a> Crear Tarjeta de Producción</p>';
+    }
   }
   else {
     $resp->nueva_tarjeta_produccion .=
@@ -577,6 +581,7 @@ function _custom_functions_get_reports_links() {
 <li><a href="/reporte/diario">Diario</a></li>
 <li><a href="/reporte/rol-de-pagos-operador">Rol de Pagos - Operador</a></li>
 <li><a href="/reporte/rol-de-pagos-mensual">Rol de Pagos - Mensual</a></li>
+<li><a href="/reporte/empleados">Lista de empleados</a></li>
 </ul>';
 }
 
