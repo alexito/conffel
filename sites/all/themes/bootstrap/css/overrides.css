@@ -202,7 +202,7 @@ label[for="edit-field-tela-und"]{
 }
 
 /*--------------- REPORTE LISTA DIARIO --------------*/
-
+.page-reporte-tarjeta-de-produccion .view-content,
 .page-reporte-diario .view-content {
   font-family: Consolas,monospace;
 }
@@ -379,5 +379,13 @@ label[for="edit-field-tela-und"]{
   margin-top: 20px;
 }
 .page-reporte-rol-de-pagos-mensual .views-table {
+  border: 1px solid #c2c2c2;
+}
+
+/*--------- REPORTE TARJETAS-------- */
+.page-reporte-tarjeta-de-produccion .view-content tr{
+  border-bottom: 1px solid #c2c2c2;
+}
+.page-reporte-tarjeta-de-produccion .view-content .views-table{
   border: 1px solid #c2c2c2;
 }

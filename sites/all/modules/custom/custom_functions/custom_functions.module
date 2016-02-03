@@ -159,12 +159,28 @@ function _custom_functions_diario_validation($form, &$form_state) {
               $uds = intval($tarjeta['field_uds'][LANGUAGE_NONE][0]['value']);
               $fallas = intval($tarjeta['field_fallas'][LANGUAGE_NONE][0]['value']);
 
+
               if (($uds + $fallas) > intval($data->restantes)) {
                 form_set_error($field_categoria, 'Aviso: La suma total de UDS + Fallas no debe ser mayor al Máximo');
+                return;
+              }
+
+              $save_tarjeta = FALSE;
+              if ($fallas > 0) {
+                $node->field_total_fallas[LANGUAGE_NONE][0]['value'] = intval($node->field_total_fallas[LANGUAGE_NONE][0]['value']) + $fallas;
+                $node->field_total_prendas[LANGUAGE_NONE][0]['value'] = intval($node->field_total_prendas[LANGUAGE_NONE][0]['value']) - $fallas;
+                //$node->field_total_faltantes[LANGUAGE_NONE][0]['value'] = $node->field_total_prendas[LANGUAGE_NONE][0]['value'];
+                $save_tarjeta = TRUE;
+              }
+              if ($uds > 0 && $grupo == 'empaque') {
+                $node->field_total_pagadas[LANGUAGE_NONE][0]['value'] = intval($node->field_total_pagadas[LANGUAGE_NONE][0]['value']) + $uds;
+                $node->field_total_faltantes[LANGUAGE_NONE][0]['value'] = intval($node->field_total_prendas[LANGUAGE_NONE][0]['value']) - intval($node->field_total_pagadas[LANGUAGE_NONE][0]['value']);
+                $node->field_tarjeta_min_prod[LANGUAGE_NONE][0]['value'] = floatval($node->field_total_pagadas[LANGUAGE_NONE][0]['value']) * floatval($node->field_total_sam[LANGUAGE_NONE][0]['value']);
+                $save_tarjeta = TRUE;
               }
 
               if (($uds + $fallas) == intval($data->restantes)) {
-                
+
                 //Actualiza la tarjeta indicando la categoria que se ha completado
                 if ($grupo == 'confeccion') {
                   $node->field_completado_confeccion[LANGUAGE_NONE][0]['value'] = TRUE;
@@ -175,7 +191,7 @@ function _custom_functions_diario_validation($form, &$form_state) {
                 else if ($grupo == 'terminado') {
                   $node->field_completado_terminado[LANGUAGE_NONE][0]['value'] = TRUE;
                 }
-                else if ($grupo == 'terminado2') {
+                else if ($grupo == 'terminado_2') {
                   $node->field_completado_terminado_2[LANGUAGE_NONE][0]['value'] = TRUE;
                 }
                 else if ($grupo == 'bordado') {
@@ -192,7 +208,13 @@ function _custom_functions_diario_validation($form, &$form_state) {
                 }
                 else if ($grupo == 'empaque') {
                   $node->field_completado_empaque[LANGUAGE_NONE][0]['value'] = TRUE;
+                  $node->field_tarjeta_completa[LANGUAGE_NONE][0]['value'] = TRUE;
                 }
+                $save_tarjeta = TRUE;
+
+              }
+
+              if ($save_tarjeta) {
                 node_save($node);
               }
             }
@@ -222,6 +244,8 @@ function custom_functions_node_presave($node) {
       $node->title = get_new_id($node->type);
     }
 
+    $node->field_total_sam[LANGUAGE_NONE][0]['value'] = floatval($node->field_sam_preparacion[LANGUAGE_NONE][0]['value']) + floatval($node->field_sam_confeccion[LANGUAGE_NONE][0]['value']) + floatval($node->field_sam_terminado[LANGUAGE_NONE][0]['value']);
+
     $cont = 0;
     
     $v = taxonomy_vocabulary_machine_name_load('tallas');
@@ -231,7 +255,6 @@ function custom_functions_node_presave($node) {
       if(isset($node->$term_tid)) {
         if(intval($node->$term_tid) > 0) {
 
-          //$field_collection_item->save();
           if($cont > 0) {
             $field_collection_item = entity_create('field_collection_item', array('field_name' => 'field_fc_talla_y_cantidad'));
             $field_collection_item->setHostEntity('node', $node);
@@ -422,7 +445,7 @@ function _custom_functions_imprimir_diario($node) {
    }
 
    $corte = node_load($node->field_nodo_corte[LANGUAGE_NONE][0]['nid']);
-   $user_corte = user_load($corte->uid);
+   $user_corte = user_load($corte->field_cortador[LANGUAGE_NONE][0]['uid']);
    if (isset($user_corte->field_nombre_y_apellido[LANGUAGE_NONE][0])) {
      $node->user_corte_nombre = $user_corte->field_nombre_y_apellido[LANGUAGE_NONE][0]['value'];
    }
@@ -458,7 +481,7 @@ function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
   $data = new stdClass();
   $wrapper = entity_metadata_wrapper('node', $node);
 
-  $data->total_prendas = $wrapper->field_total_prendas->value();
+  $data->total_prendas = intval($wrapper->field_total_prendas->value()) + intval($wrapper->field_total_fallas->value());
 
   $data->sam_confeccion = $wrapper->field_sam_confeccion->value();
   $data->sam_preparacion = $wrapper->field_sam_preparacion->value();
@@ -582,6 +605,7 @@ function _custom_functions_get_reports_links() {
 <li><a href="/reporte/rol-de-pagos-operador">Rol de Pagos - Operador</a></li>
 <li><a href="/reporte/rol-de-pagos-mensual">Rol de Pagos - Mensual</a></li>
 <li><a href="/reporte/empleados">Lista de empleados</a></li>
+<li><a href="/reporte/tarjeta-de-produccion">Lista de Tarjetas</a></li>
 </ul>';
 }
 

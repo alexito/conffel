@@ -90,6 +90,7 @@
                   nid = nid[1].split(']');
                   nid = nid[0];
                   $.post("/get-tarjeta-info/" + nid + "/" + grupo, function (data) {
+                    console.log(data);
                     global_tarjetas[nid] = data;
                     setTarjeta(data, grupo, tarjeta, panel, valor_minuto);
                   });
@@ -433,13 +434,14 @@
           });
         });
 
-        //Configura los imputs para permitir solo numeros
+        //Configura los inputs para permitir solo numeros
         var total = 0;
         $('input[data-custom-num="1"]').each(function (i, e) {
           setAsDecimal(this);
 
           total += parseInt($(this).val());
           $('#edit-field-total-prendas-und-0-value').val(total);
+          $('#edit-field-total-faltantes-und-0-value').val(total);
 
           $(this).blur(function () {
 
@@ -468,6 +470,7 @@
             $('input[data-custom-num="1"]').each(function () {
               total += parseInt($(this).val());
               $('#edit-field-total-prendas-und-0-value').val(total);
+              $('#edit-field-total-faltantes-und-0-value').val(total);
             });
           });
 
