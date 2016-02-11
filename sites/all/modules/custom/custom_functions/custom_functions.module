@@ -511,6 +511,7 @@ function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
     ->execute();
 
   $total_hechas = 0;
+  $total_fallas = 0;
 
   if ($results) {
     $fci = $results['field_collection_item'];
@@ -520,6 +521,7 @@ function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
 
       $total_hechas += intval($fc_tarjeta->field_uds[LANGUAGE_NONE][0]['value']);
       $total_hechas += intval($fc_tarjeta->field_fallas[LANGUAGE_NONE][0]['value']);
+      $total_fallas += intval($fc_tarjeta->field_fallas[LANGUAGE_NONE][0]['value']);
 
       // $tem = field_collection_item_get_host_entity($fc_tarjeta);
       // $fc_modulo = field_collection_item_load($tem->item_id->value());
@@ -529,7 +531,8 @@ function _custom_functions_get_tarjeta_info($node, $grupo, $ajax = TRUE) {
   }
 
   $data->total_hechas = $total_hechas;
-  $data->restantes = $data->total_prendas - $data->total_hechas;
+  $data->total_fallas = $total_fallas;
+  $data->restantes = intval($node->field_total_prendas[LANGUAGE_NONE][0]['value']) - $data->total_hechas + $total_fallas;
 
   $data->info = $node;
 

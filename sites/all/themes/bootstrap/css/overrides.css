@@ -50,7 +50,7 @@ html.overlay-open .navbar-fixed-top{z-index:400}html.js fieldset.collapsed{heigh
 .tabledrag-toggle-weight-wrapper,
 .node-form.node-corte-form .form-item-title,
 .page-t-produccion .node-tarjeta_de_produccion-form .form-item-title,
-.page-node-add-extra .form-item-title {
+.page-node-add-extra .form-item-title, #edit-timezone, #edit-contact, #edit-picture {
   display: none;
 }
 
@@ -164,14 +164,16 @@ a.tabledrag-handle{
 .views-widget-filter-field_modelo_tid{
   max-width: 300px;
 }
-#edit-field-tela div.autocomplete-deluxe-multiple {
+div.autocomplete-deluxe-multiple {
   width: auto;
   padding: 0;
 }
-#edit-field-tela div.autocomplete-deluxe-multiple .autocomplete-deluxe-throbber {
+.autocomplete-deluxe-throbber.autocomplete-deluxe-open,
+div.autocomplete-deluxe-multiple .autocomplete-deluxe-throbber {
   display: none;
 }
-#edit-field-tela div.autocomplete-deluxe-multiple .autocomplete-deluxe-form {
+
+div.autocomplete-deluxe-multiple .autocomplete-deluxe-form {
 
 }
 #edit-locale, .form-type-checkbox.form-item-notify, .form-item-status, .form-type-textfield .help-block, .password-strength,
@@ -381,6 +383,11 @@ label[for="edit-field-tela-und"]{
 .page-reporte-rol-de-pagos-mensual .views-table {
   border: 1px solid #c2c2c2;
 }
+.view-id-tarjetas_de_produccion.view-display-id-page_1 table td,
+.view-id-tarjetas_de_produccion.view-display-id-page_1 table th {
+  padding: 2px 5px;
+  border-right: 1px solid #c2c2c2;
+}
 
 /*--------- REPORTE TARJETAS-------- */
 .page-reporte-tarjeta-de-produccion .view-content tr{
@@ -389,3 +396,4 @@ label[for="edit-field-tela-und"]{
 .page-reporte-tarjeta-de-produccion .view-content .views-table{
   border: 1px solid #c2c2c2;
 }
+
